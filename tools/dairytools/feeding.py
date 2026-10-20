@@ -63,7 +63,9 @@ def _pen_feed_days(herd: Herd):
         meta[k] = r.get("dc_pen")
         d = days[k]
         d["dm_lb_per_head"] += r.get("actual_dm_lb_per_head") or 0
-        d["cost_per_head"] += r.get("actual_cost_per_head") or 0
+        cost = r.get("actual_cost_per_head")
+        # A feed with no price makes the day's cost unknown, never $0 for that feed.
+        d["cost_per_head"] = None if cost is None or d["cost_per_head"] is None else d["cost_per_head"] + cost
         d["target_dm"] += r.get("target_dm_lb_per_head") or 0
     return [{"pen": p, "date": dt, "dc_pen": meta[(p, dt)], "life_stage": None, "head_count": None,
              "source": "Ingredient Intake", **v} for (p, dt), v in days.items() if v["dm_lb_per_head"] > 0]
@@ -92,7 +94,8 @@ def pen_feed(herd: Herd, days: int = 7, milk_price: float | None = None, pen=Non
         before, b_start, b_end = _window(rows, days, start - timedelta(days=1)) if start else ([], None, None)
 
         def per_cow(rs, key):
-            if not rs:
+            """The window's average per cow; None when any day lacks the figure (a missing price is never $0)."""
+            if not rs or any(r.get(key) is None for r in rs):
                 return None
             if rs[0].get("head_count"):   # Pen Summary: EZfeed's total over DairyComp's count
                 return mean([r[key] * r["head_count"] for r in rs]) / heads
@@ -135,6 +138,9 @@ def pen_feed(herd: Herd, days: int = 7, milk_price: float | None = None, pen=Non
                                 "head count to correct it).")
         if not cows:
             row["notes"].append("No milking cow in the pen has a test: no milk, ECM or efficiency.")
+        if dmi is not None and cost is None:
+            row["notes"].append("A feed in these days has no price in EZfeed: no feed cost, cost per cwt or IOFC "
+                                "(add the price in EZfeed and export again).")
         out.append(row)
     return {"pens": out, "days": days, "milk_price": milk_price, "source": herd.source_line(),
             "definitions": [
@@ -163,7 +169,7 @@ def loading_accuracy(herd: Herd, by: str = "ingredient", days: int | None = None
         for f, ls in groups.items():
             w = [l.get("loads") or 1 for l in ls]
             dev = sum(abs(l["deviation_pct"]) * x for l, x in zip(ls, w)) / sum(w)
-            rows.append({"feeder": f, "days": len({l["date"] for l in ls}), "loads": sum(w),
+            rows.append({"feeder": f, "days": len({l["date"] for l in ls}), "loads": round(sum(w)),
                          "mean_abs_deviation_pct": dev})
         rows.sort(key=lambda r: -r["mean_abs_deviation_pct"])
         return {"by": "feeder", "rows": rows, "reference_lines": ["1-2% is achievable (Kluth), cited for context."]}

@@ -14,6 +14,8 @@ Export > Save as CSV.
 
 ## 1. The reports to save
 
+`scripts/` is in this skill's own folder, next to this SKILL.md (`${CLAUDE_SKILL_DIR}/scripts` where the agent fills that in): give that full path, or run from the skill's folder.
+
 ```
 python scripts/dairy.py commands --folder "Farm Exports" [--years 3]
 ```

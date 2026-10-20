@@ -11,7 +11,7 @@ def clean(values):
 
 def mean(values):
     v = clean(values)
-    return sum(v) / len(v) if v else None
+    return math.fsum(v) / len(v) if v else None   # fsum: the same answer on every Python
 
 
 def median(values):

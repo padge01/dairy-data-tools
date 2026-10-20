@@ -32,6 +32,7 @@ import sys
 from datetime import date
 from pathlib import Path
 
+sys.dont_write_bytecode = True   # leave nothing behind in the skill folder
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from dairytools import cards, commands, cowcard, explorer, feeding, io, weekly, weeklycard  # noqa: E402
 from dairytools.herd import load  # noqa: E402
@@ -137,7 +138,7 @@ def text(cmd: str, out) -> str:
 def main(argv=None):
     p = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     p.add_argument("command")
-    p.add_argument("text", nargs="?", help="the DairyComp command, for check")
+    p.add_argument("text", nargs="*", help="the DairyComp command, for check (quotes optional)")
     p.add_argument("--folder", help="folder of the farm's exports")
     p.add_argument("--pen")
     p.add_argument("--cow")
@@ -171,7 +172,7 @@ def main(argv=None):
     elif cmd == "commands":
         out = commands.export_commands(item_list(), events_days=365 * a.years)
     elif cmd == "check":
-        out = commands.check(a.text or "", item_list())
+        out = commands.check(" ".join(a.text), item_list())
     elif cmd == "items":
         items = item_list()
         if not items:
@@ -204,7 +205,7 @@ def main(argv=None):
     elif cmd == "exits":
         out = weekly.exits(herd())
     elif cmd == "weekly":
-        out = weekly.weekly(herd(), a.milk_price)
+        out = weekly.weekly(herd(), a.milk_price, a.vwp)
     elif cmd == "card":
         h = herd()
         if a.weekly:
@@ -214,7 +215,7 @@ def main(argv=None):
                     if line.strip():
                         what, _, who = line.partition("|")
                         acts.append((what.strip(), who.strip()))
-            page = weeklycard.weekly_html(h, a.milk_price, acts)
+            page = weeklycard.weekly_html(h, a.milk_price, acts, a.vwp)
             target, what = Path(a.out or "visit-review.html"), "the visit review"
         elif a.feed:
             page = weeklycard.pen_feed_html(h, a.milk_price, a.days or 7)

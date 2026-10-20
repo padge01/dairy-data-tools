@@ -30,6 +30,7 @@ import sys
 from datetime import date, timedelta
 from pathlib import Path
 
+sys.dont_write_bytecode = True   # leave nothing behind in the skill folder
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from dairyread import day, ecm_lb, mean, number, read_intakes, read_text  # noqa: E402
 

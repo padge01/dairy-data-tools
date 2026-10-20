@@ -14,12 +14,14 @@ what they show.
 Point it at the folder that holds the farm's files (in Claude's chat, the files attached to the conversation, saved
 together in one folder first):
 
+`scripts/` is in this skill's own folder, next to this SKILL.md (`${CLAUDE_SKILL_DIR}/scripts` where the agent fills that in): give that full path, or run from the skill's folder.
+
 ```
 python scripts/dairy.py files --folder "Farm Exports"        # which file is which, and what's missing
 python scripts/dairy.py herd  --folder "Farm Exports"        # the herd now
 python scripts/dairy.py pens  --folder "Farm Exports"        # one line per pen
 python scripts/dairy.py pen   --folder "Farm Exports" --pen 21 [--days 30]
-python scripts/dairy.py cow   --folder "Farm Exports" --cow 1100
+python scripts/dairy.py cow   --folder "Farm Exports" --cow 3004
 ```
 
 Add `--json out.json` for every figure (cards are drawn from it). File names don't matter: each file is recognised

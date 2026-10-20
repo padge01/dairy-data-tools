@@ -11,6 +11,7 @@ from __future__ import annotations
 
 import csv
 import io
+import math
 import re
 from dataclasses import dataclass, field
 from datetime import date, datetime
@@ -308,7 +309,7 @@ def ecm_lb(milk_lb: float, fat_pct: float, protein_pct: float) -> float:
 
 def mean(values) -> float | None:
     values = [v for v in values if v is not None]
-    return sum(values) / len(values) if values else None
+    return math.fsum(values) / len(values) if values else None   # the same answer on every Python
 
 
 def percentiles(values, qs=(0.1, 0.5, 0.9)) -> tuple[float, ...] | None:

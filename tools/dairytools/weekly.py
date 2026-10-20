@@ -263,16 +263,20 @@ def exits(herd: Herd) -> dict:
                             "the farm's own codes in remarks, left out here as untrusted text."]}
 
 
-def weekly(herd: Herd, milk_price=None) -> dict:
+def weekly(herd: Herd, milk_price=None, vwp: int = 50) -> dict:
     """Everything for a visit or a week, in one place."""
     from . import explorer, feeding
     out = {"herd": explorer.herd_summary(herd), "pens": explorer.pen_summary(herd), "fresh_cows": fresh_cows(herd),
-           "components": components(herd), "udder_health": udder_health(herd), "reproduction": reproduction(herd),
-           "exits": exits(herd)}
+           "components": components(herd), "udder_health": udder_health(herd),
+           "reproduction": reproduction(herd, vwp=vwp), "exits": exits(herd)}
     if herd.feed:
+        # Separately: a farm can send the Pen Summary without the loading report, or the other way round.
         try:
             out["pen_feed"] = feeding.pen_feed(herd, milk_price=milk_price)
-            out["loading"] = feeding.loading_accuracy(herd, by="pen", days=14)
         except SystemExit as e:
             out["pen_feed"] = str(e)
+        try:
+            out["loading"] = feeding.loading_accuracy(herd, by="pen", days=14)
+        except SystemExit as e:
+            out["loading"] = str(e)
     return out

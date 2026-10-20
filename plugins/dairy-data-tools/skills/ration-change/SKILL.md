@@ -21,9 +21,11 @@ the season did over the same days.
   python scripts/pen_milk.py cows_2026-*.csv --out pen_milk.csv
   ```
 
-  It averages each pen's `DMLK1` (the day's milk) over the cows in it that day.
+  It averages each pen's `DMLK1` (the day's milk) over the cows in it that day; fat and protein are weighted by milk.
 
 ## Run
+
+`scripts/` is in this skill's own folder, next to this SKILL.md (`${CLAUDE_SKILL_DIR}/scripts` where the agent fills that in): give that full path, or run from the skill's folder.
 
 ```
 python scripts/ration_change.py --intake INTAKE_LAST_FALL.csv INTAKE_THIS_FALL.csv --pen 21 --milk pen_milk.csv --json change.json

@@ -24,7 +24,7 @@ from dataclasses import dataclass, field
 from datetime import date, timedelta
 from pathlib import Path
 
-from . import io, reference
+from . import commands, io, reference
 
 
 @dataclass
@@ -105,8 +105,11 @@ def _cow_rows(paths) -> list[dict]:
     joined: dict[tuple, dict] = {}
     order = []
     for part in parts:
+        seen = Counter()   # without birth dates, the 2nd row with a number in one report is another animal
         for row in part:
             k = tuple(row.get(x) for x in keys)
+            seen[k] += 1
+            k = k + (seen[k],)
             if k not in joined:
                 joined[k] = {}
                 order.append(k)
@@ -120,7 +123,8 @@ def _standardise(rows, table, item_list) -> tuple[list[dict], list[str]]:
     problems = []
     if not rows:
         return [], problems
-    cols = list(rows[0].keys())
+    cols = list(dict.fromkeys(k for r in rows for k in r))   # every column any row has
+    farm = commands.farm_record_items(item_list) if table == "cows" else {}
     names = {}
     for col in cols:
         if table == "events" and col in reference.EVENT_COLUMNS:
@@ -130,6 +134,8 @@ def _standardise(rows, table, item_list) -> tuple[list[dict], list[str]]:
         elif col in reference.ITEMS:
             name, kind, _, _ = reference.ITEMS[col]
             names[col] = (name, kind)
+        elif col in farm:   # the farm's own MUN, body condition, body weight... under whatever name it uses
+            names[col] = (farm[col], "number")
         else:
             safe = re.sub(r"[^a-z0-9]+", "_", col.lower()).strip("_") or "column"
             names[col] = (("item_" + safe) if safe[0].isdigit() else safe, _guess(r.get(col) for r in rows))
@@ -205,7 +211,11 @@ def _assign(events, cows):
             e["animal_id"] = cands[0]["animal_id"]
         else:
             born = [c for c in cands if c.get("birth_date") and c["birth_date"] <= e["event_date"]]
-            pick = max(born, key=lambda c: c["birth_date"]) if born else cands[0]
+            if born:
+                pick = max(born, key=lambda c: c["birth_date"])
+            else:   # no birth dates: the animal that was still in the herd on the event's day
+                still = [c for c in cands if not c.get("archive_date") or c["archive_date"] >= e["event_date"]]
+                pick = min(still, key=lambda c: c.get("archive_date") or date.max) if still else cands[-1]
             e["animal_id"] = pick["animal_id"]
 
 
@@ -226,8 +236,12 @@ def load(folder, as_of: date | None = None) -> Herd:
     events, probs = _standardise(raw_events, "events", herd.items)
     herd.problems += [f"events: {p}" for p in probs]
 
+    taken = Counter()
     for c in cows:
-        c["animal_id"] = animal_id(c["cow_id"], c.get("birth_date"))
+        aid = animal_id(c["cow_id"], c.get("birth_date"))
+        taken[aid] += 1
+        # Without birth dates a reused number still names two animals: the later rows get #2, #3.
+        c["animal_id"] = aid if taken[aid] == 1 else f"{aid}#{taken[aid]}"
         c["pen"] = pen_label(c.get("pen")) if "pen" in c else "No pen"
     reused = sum(1 for _, n in Counter(c["cow_id"] for c in cows).items() if n > 1)
     if reused:
@@ -246,10 +260,20 @@ def load(folder, as_of: date | None = None) -> Herd:
     events = [e for e in unique if e.get("event_date")]
     herd.unmapped_codes = _map_events(events, _read_event_map(folder))
 
-    dates = [e["event_date"] for e in events]
+    # "Today" is the last day the records reach. An event dated after the export was made is a typing slip: it stays
+    # in the records but doesn't set the day. The export was made no earlier than the computer's date, or than the
+    # newest milk test in it (a test is recorded after it happens), whichever is later.
+    tests = [c["test_date"] for c in cows if c.get("test_date")]
+    made = max([date.today()] + tests)
+    future = [e for e in events if e["event_date"] > made]
+    if future:
+        herd.problems.append(f"{len(future)} events are dated after the export ({made}), e.g. "
+                             f"{future[0]['dc_event']} on {future[0]['event_date']}: they don't set the records' last day")
+    dates = [e["event_date"] for e in events if e["event_date"] <= made]
+    cow_dates = [d for c in cows for d in (c.get("test_date"), c.get("fresh_date"), c.get("dry_date"))
+                 if d and d <= made]
     herd.events_from = min(dates) if dates else None
-    herd.as_of = as_of or (max(dates) if dates else
-                           max((c.get("test_date") for c in cows if c.get("test_date")), default=date.today()))
+    herd.as_of = as_of or max(dates + cow_dates, default=date.today())
 
     # Exits: the last SOLD or DIED, else the archive date.
     exits = {}
@@ -270,14 +294,16 @@ def load(folder, as_of: date | None = None) -> Herd:
         elif c["is_dry"]:
             c["days_in_milk"] = (dry - fresh).days
         else:
-            c["days_in_milk"] = (herd.as_of - fresh).days
-    no_fresh = [c for c in cows if not c.get("fresh_date") and not c["left_date"] and c.get("dc_days_in_milk") is not None
-                and (c.get("lactation") or 0) >= 1]
-    for c in no_fresh:   # no fresh date exported: DairyComp's own figure is all there is
-        c["days_in_milk"] = c["dc_days_in_milk"]
+            c["days_in_milk"] = max(0, (herd.as_of - fresh).days)
+    no_fresh = [c for c in cows if not c.get("fresh_date") and not c["left_date"] and (c.get("lactation") or 0) >= 1]
+    for c in no_fresh:   # no fresh date exported: DairyComp's own figure, when there is one, is all there is
+        if c.get("dc_days_in_milk") is not None:
+            c["days_in_milk"] = c["dc_days_in_milk"]
     if no_fresh:
-        herd.problems.append(f"{len(no_fresh)} cows have no fresh date (FDAT) in the export: their days in milk are "
-                             "DairyComp's own figure. Add FDAT to the cow report.")
+        with_dim = sum(1 for c in no_fresh if c.get("days_in_milk") is not None)
+        herd.problems.append(f"{len(no_fresh)} calved cows have no fresh date (FDAT) in the export: "
+                             + (f"{with_dim} use DairyComp's own days in milk, " if with_dim else "")
+                             + f"{len(no_fresh) - with_dim} can't be counted as milking or dry. Add FDAT to the cow report.")
     shifts = sorted(c["dc_days_in_milk"] - c["days_in_milk"] for c in cows
                     if c.get("dc_days_in_milk") is not None and c.get("days_in_milk") is not None and not c["is_dry"])
     if shifts and shifts[len(shifts) // 2] > 7:

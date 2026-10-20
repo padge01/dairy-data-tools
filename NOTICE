@@ -5,5 +5,15 @@ The code (Python scripts, tools and tests) is licensed under the Apache License,
 The skills' text (every SKILL.md) is licensed under Creative Commons Attribution 4.0 International (LICENSE-skills.md).
 The sample herd is made up; no real farm's records are in this repository.
 
+Much of the code is ported to Python from the Rossow Data Lab's R package (vmtrc), the author's teaching tools for
+Heidi Rossow's lab at UC Davis, and is released here under the Apache License 2.0. The sample herd comes from that
+package's herd simulator. UC Davis has not reviewed or endorsed this project.
+
+Figures and their sources:
+- Energy-corrected milk: 0.327 x milk + 12.95 x fat + 7.65 x protein, in lb (Tyrrell and Reid, 1965; Orth, 1992).
+- Predicted dry matter intake: National Academies of Sciences, Engineering, and Medicine (2021), Nutrient
+  Requirements of Dairy Cattle, 8th revised edition, equation 2-1.
+- 21-day pregnancy rate: counted the way DairyComp 305's BREDSUM report counts it.
+
 DairyComp 305 and EZfeed are products of Valley Ag Software. This project is not affiliated with or endorsed
 by Valley Ag Software. It reads only export files that the programs write for their users.

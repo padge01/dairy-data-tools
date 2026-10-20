@@ -11,6 +11,8 @@ one run, from the farm's exports.
 
 ## Run
 
+`scripts/` is in this skill's own folder, next to this SKILL.md (`${CLAUDE_SKILL_DIR}/scripts` where the agent fills that in): give that full path, or run from the skill's folder.
+
 ```
 python scripts/dairy.py weekly     --folder "Farm Exports" [--milk-price 21.50] --json weekly.json
 python scripts/dairy.py fresh      --folder "Farm Exports"

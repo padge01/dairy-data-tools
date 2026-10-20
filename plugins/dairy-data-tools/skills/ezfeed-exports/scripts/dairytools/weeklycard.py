@@ -143,8 +143,9 @@ def pen_feed_html(herd: Herd, milk_price: float | None = None, days: int = 7) ->
 
 # --- visit review ----------------------------------------------------------------------------------------------------
 
-def weekly_html(herd: Herd, milk_price: float | None = None, actions: list[tuple[str, str]] | None = None) -> str:
-    w = weekly.weekly(herd, milk_price)
+def weekly_html(herd: Herd, milk_price: float | None = None, actions: list[tuple[str, str]] | None = None,
+                vwp: int = 50) -> str:
+    w = weekly.weekly(herd, milk_price, vwp)
     h = w["herd"]
     t = h["test"]
     end = herd.as_of

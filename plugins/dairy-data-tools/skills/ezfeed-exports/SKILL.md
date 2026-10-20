@@ -24,6 +24,8 @@ its column headings.
 Set the date range as long as the question needs: last year's same weeks as well make the season check possible.
 Save them into the same folder as the DairyComp files, named however you like:
 
+`scripts/` is in this skill's own folder, next to this SKILL.md (`${CLAUDE_SKILL_DIR}/scripts` where the agent fills that in): give that full path, or run from the skill's folder.
+
 ```
 python scripts/dairy.py files --folder "Farm Exports"
 ```

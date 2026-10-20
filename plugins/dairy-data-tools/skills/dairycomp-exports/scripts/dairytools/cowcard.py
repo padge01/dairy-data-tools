@@ -105,7 +105,8 @@ def cow_card_html(herd: Herd, cow, gestation: int = 280) -> str:
     if me.get("test_milk") and len(pen_milk) >= 5:
         above = sum(1 for v in pen_milk if v > me["test_milk"])
         top = max(1, round(100 * (above + 1) / len(pen_milk)))
-        place = f"Top {top}%" if top <= 50 else f"Bottom {max(1, 100 - top + 1)}%"
+        below = sum(1 for v in pen_milk if v < me["test_milk"])
+        place = f"Top {top}%" if top <= 50 else f"Bottom {max(1, round(100 * (below + 1) / len(pen_milk)))}%"
         rank = f"<b>{place}</b> of pen {esc(me['pen'])} at the last test ({len(pen_milk)} cows)"
     spread = ""
     if pen_milk and me.get("test_milk"):

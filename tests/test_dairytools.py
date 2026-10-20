@@ -147,3 +147,57 @@ def test_no_control_characters_in_the_code():
         for node in ast.walk(ast.parse(f.read_text(encoding="utf-8"))):
             if isinstance(node, ast.Constant) and isinstance(node.value, str):
                 assert not any(ord(ch) < 9 for ch in node.value), f"{f}:{node.lineno}"
+
+
+# --- the audit's cases -----------------------------------------------------------------------------------------------
+
+def test_a_missing_price_gives_no_cost_never_zero(tmp_path):
+    write(tmp_path, "cows.csv", COWS)
+    write(tmp_path, "events.csv", EVENTS)
+    write(tmp_path, "pen summary.csv", PEN_SUMMARY.replace(",60.00,$9.00,$540.00,0,0,0,0,3,100%,6:15 AM",
+                                                           ",60.00,,,0,0,0,0,3,100%,6:15 AM"))
+    p = feeding.pen_feed(load(tmp_path), days=7, milk_price=20.0)["pens"][0]
+    assert p["dmi_lb_per_cow"] is not None
+    assert p["feed_cost_per_cow"] is None and "iofc_per_cow" not in p
+    assert any("no price" in n for n in p["notes"])
+
+
+def test_weekly_keeps_pen_feed_when_the_loading_report_is_missing(tmp_path):
+    write(tmp_path, "cows.csv", COWS)
+    write(tmp_path, "events.csv", EVENTS)
+    write(tmp_path, "pen summary.csv", PEN_SUMMARY)
+    w = weekly.weekly(load(tmp_path), 20.0, vwp=60)
+    assert isinstance(w["pen_feed"], dict) and isinstance(w["loading"], str)
+    assert w["reproduction"]["vwp"] == 60
+
+
+def test_last_year_of_29_february_is_the_28th():
+    from dairytools.cards import _shift_years
+    assert _shift_years(date(2028, 2, 29), -1) == date(2027, 2, 28)
+    assert _shift_years(date(2026, 10, 1), -1) == date(2025, 10, 1)
+
+
+def test_pen_milk_weights_fat_by_milk_and_expands_patterns(tmp_path, monkeypatch, capsys):
+    sys.path.insert(0, str(ROOT / "plugins/dairy-data-tools/skills/ration-change/scripts"))
+    import pen_milk
+    for day in ("2026-09-01", "2026-09-02"):
+        write(tmp_path, f"cows_{day}.csv", "ID,PEN,DMLK1,PCTF,PCTP\n1,21,100,3.0,3.0\n2,21,50,4.5,3.3\n")
+    out = tmp_path / "pen_milk.csv"
+    pen_milk.main([str(tmp_path / "cows_2026-*.csv"), "--out", str(out)])
+    lines = out.read_text().splitlines()
+    assert len(lines) == 3
+    assert lines[1] == "2026-09-01,21,75.00,3.50,3.10,2"            # (100 x 3.0 + 50 x 4.5) / 150 = 3.5
+
+
+def test_a_newer_test_moves_the_day_past_the_computers_date(tmp_path):
+    """An export can't be older than its newest test: events up to that test count, later ones are typing slips."""
+    from datetime import timedelta
+    soon, later = date.today() + timedelta(days=5), date.today() + timedelta(days=400)
+    fmt = lambda d: d.strftime("%m/%d/%y")
+    write(tmp_path, "cows.csv", f"ID,BDAT,LACT,PEN,FDAT,TDAT,MILK\n1,01/01/20,2,21,{fmt(date.today() - timedelta(days=30))},"
+                                f"{fmt(soon)},80\n")
+    write(tmp_path, "events.csv", f"ID,BDAT,LACT,Event,DIM,Date,Remark,R,T,B,Protocols,Technician\n"
+                                  f"1,01/01/20,2,MOVE,30,{fmt(soon)},,,,,,\n1,01/01/20,2,MOVE,30,{fmt(later)},,,,,,\n")
+    herd = load(tmp_path)
+    assert herd.as_of == soon
+    assert any("dated after the export" in p for p in herd.problems)

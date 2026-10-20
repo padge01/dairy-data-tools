@@ -12,6 +12,8 @@ Summary or Ingredient Intake report in the same folder (see the ezfeed-exports s
 
 ## Run
 
+`scripts/` is in this skill's own folder, next to this SKILL.md (`${CLAUDE_SKILL_DIR}/scripts` where the agent fills that in): give that full path, or run from the skill's folder.
+
 ```
 python scripts/dairy.py pen-feed --folder "Farm Exports" [--milk-price 21.50] [--days 7] [--pen 21]
 python scripts/dairy.py loading  --folder "Farm Exports" [--by ingredient|pen|feeder] [--days 14]

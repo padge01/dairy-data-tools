@@ -213,6 +213,14 @@ def _recipe_changes(herd: Herd, ezfeed_pen: str):
     return out
 
 
+
+def _shift_years(d, years):
+    """The same day another year; 29 February becomes the 28th in a year without it."""
+    try:
+        return d.replace(year=d.year + years)
+    except ValueError:
+        return d.replace(year=d.year + years, day=28)
+
 def pen_card_html(herd: Herd, pen, pen_milk: dict | None = None, days: int = 75) -> str:
     """Pen 21's card: who is in it, their milk, their stage, intake; ECM and intake by day with a ration change
     marked and last fall's same weeks beside this fall's; what changed. pen_milk: {(pen, date): {milk, fat, protein}}."""
@@ -266,7 +274,7 @@ def pen_card_html(herd: Herd, pen, pen_milk: dict | None = None, days: int = 75)
             out = []
             d = start
             while d <= end:
-                src = d.replace(year=d.year + year_shift)
+                src = _shift_years(d, year_shift)
                 v = pen_milk.get((pen, src))
                 e = ecm_lb(v["milk_lb"], v["fat_pct"], v["protein_pct"]) if v and v.get("fat_pct") else None
                 out.append((d, e))
@@ -294,7 +302,7 @@ def pen_card_html(herd: Herd, pen, pen_milk: dict | None = None, days: int = 75)
             vals = []
             dd = a
             while dd <= b:
-                v = pen_milk.get((pen, dd.replace(year=dd.year + year_shift)))
+                v = pen_milk.get((pen, _shift_years(dd, year_shift)))
                 if v and v.get("fat_pct"):
                     vals.append(ecm_lb(v["milk_lb"], v["fat_pct"], v["protein_pct"]))
                 dd += timedelta(days=1)

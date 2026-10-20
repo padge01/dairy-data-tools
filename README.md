@@ -41,7 +41,8 @@ Ask in plain words; the right skill picks itself. No commands to learn.
 | ration-change | "Did pen 21's ration change work, or is it the season?" | The week before against the latest week, with the same weeks last year or another pen taken out |
 | balance-ration | "Balance pen 21's ration" | The free Dairy Ration Lab when it's connected; this kit never makes up a ration |
 
-Built on the Rossow Data Lab's teaching tools (UC Davis), ported to plain Python: every count says what it's out of,
+Built on the Rossow Data Lab, teaching tools the author wrote for Heidi Rossow's lab at UC Davis, ported to plain
+Python: every count says what it's out of,
 milk is shown as a spread, and the farm is compared with itself, never with published targets.
 
 **A sample herd** (`sample-herd/`): a made-up California dairy's exports, to try every skill before using a real farm's.

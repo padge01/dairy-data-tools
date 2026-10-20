@@ -1,0 +1,43 @@
+{
+  "name": "dairy-data-tools",
+  "version": "0.2.0",
+  "description": "Skills for dairy nutritionists, vets and consultants working from a farm's own DairyComp and EZfeed exports: the DairyComp commands to export with, the herd and each pen and cow, pen cows joined to pen feed (intake, ECM per lb DM, cost per cwt, IOFC), a weekly or visit review, and a ration change with the season taken out. Read-only Python scripts, no network; results as cards.",
+  "author": {
+    "name": "Pádraig Lucey"
+  },
+  "homepage": "https://github.com/padge01/dairy-data-tools",
+  "repository": "https://github.com/padge01/dairy-data-tools",
+  "license": "Apache-2.0",
+  "keywords": [
+    "dairy",
+    "nutrition",
+    "ration",
+    "DairyComp",
+    "EZfeed",
+    "dry matter intake",
+    "energy-corrected milk",
+    "feed cost",
+    "herd management",
+    "veterinary",
+    "dairy consultant",
+    "weekly review"
+  ],
+  "skills": "./skills/",
+  "interface": {
+    "displayName": "Dairy Data Tools",
+    "shortDescription": "A farm's DairyComp and EZfeed exports, read for you",
+    "longDescription": "For dairy nutritionists, vets and consultants: the DairyComp commands to export a farm's records, then the herd, each pen and cow, pen cows joined to pen feed, a weekly or visit review, and a ration change with the season taken out. Read-only scripts on your computer; nothing is sent anywhere.",
+    "developerName": "Pádraig Lucey",
+    "category": "Education & Research",
+    "capabilities": [
+      "Read",
+      "Write"
+    ],
+    "websiteURL": "https://github.com/padge01/dairy-data-tools",
+    "defaultPrompt": [
+      "How is pen 21 doing?",
+      "What's pen 21's feed efficiency and IOFC at $21.50 milk?",
+      "Get me ready for a visit: fresh cows, components, mastitis, pregnancy rate."
+    ]
+  }
+}

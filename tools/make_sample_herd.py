@@ -19,6 +19,7 @@ import math
 import random
 import shutil
 import sys
+from math import fsum   # the same float sums on every Python (3.12 changed sum())
 from collections import defaultdict
 from datetime import date, timedelta
 from pathlib import Path
@@ -123,7 +124,7 @@ def feed_days(first: date, last: date, pens: dict, rnd: random.Random) -> dict:
         d = first
         while d <= last:
             recipe, call = plan(d)
-            scale = call / sum(recipe.values())
+            scale = call / fsum(recipe.values())
             fed = 1 + rnd.uniform(-0.012, 0.012)
             for feed, lb in recipe.items():
                 dm, price = FEEDS[feed]
@@ -142,14 +143,14 @@ def intake_lines(days_by_pen: dict, heads: dict) -> list[str]:
         head = heads[pen]
         every = [r for feed_rows in rows.values() for r in feed_rows]
         n = len({r[0] for r in every})
-        lines.append(f"{pen},,,{sum(r[1] for r in every) / n:.2f},{sum(r[2] for r in every) / n:.2f},"
-                     f"{money(sum(r[3] for r in every) / n)},{money(sum(r[4] for r in every) / n)},"
-                     f"\"{money(sum(r[3] for r in every) * head)}\",\"{money(sum(r[4] for r in every) * head)}\"")
+        lines.append(f"{pen},,,{fsum(r[1] for r in every) / n:.2f},{fsum(r[2] for r in every) / n:.2f},"
+                     f"{money(fsum(r[3] for r in every) / n)},{money(fsum(r[4] for r in every) / n)},"
+                     f"\"{money(fsum(r[3] for r in every) * head)}\",\"{money(fsum(r[4] for r in every) * head)}\"")
         for feed, feed_rows in rows.items():
             k = len(feed_rows)
-            lines.append(f",{quoted(feed)},,{sum(r[1] for r in feed_rows) / k:.2f},{sum(r[2] for r in feed_rows) / k:.2f},"
-                         f"{money(sum(r[3] for r in feed_rows) / k)},{money(sum(r[4] for r in feed_rows) / k)},"
-                         f"\"{money(sum(r[3] for r in feed_rows) * head)}\",\"{money(sum(r[4] for r in feed_rows) * head)}\"")
+            lines.append(f",{quoted(feed)},,{fsum(r[1] for r in feed_rows) / k:.2f},{fsum(r[2] for r in feed_rows) / k:.2f},"
+                         f"{money(fsum(r[3] for r in feed_rows) / k)},{money(fsum(r[4] for r in feed_rows) / k)},"
+                         f"\"{money(fsum(r[3] for r in feed_rows) * head)}\",\"{money(fsum(r[4] for r in feed_rows) * head)}\"")
             for d, t, a, ct, ca in feed_rows:
                 lines.append(f",,{d.month}/{d.day}/{d.year},{t:.2f},{a:.2f},{money(ct)},{money(ca)},"
                              f"\"{money(ct * head)}\",\"{money(ca * head)}\"")
@@ -173,9 +174,9 @@ def rations_lines():
                          ("Dry", DRY)):
         af = {f: lb / (FEEDS[f][0] / 100) for f, lb in recipe.items()}
         cost = {f: af[f] * FEEDS[f][1] / 2000 for f in recipe}
-        total_af, total_dm = sum(af.values()), sum(recipe.values())
-        lines.append(f"{quoted(name)},,{total_af:.2f},{total_dm:.2f},{money(sum(cost.values()))},"
-                     f"{100 * total_dm / total_af:.2f}%,{money(2000 * sum(cost.values()) / total_af)}")
+        total_af, total_dm = fsum(af.values()), fsum(recipe.values())
+        lines.append(f"{quoted(name)},,{total_af:.2f},{total_dm:.2f},{money(fsum(cost.values()))},"
+                     f"{100 * total_dm / total_af:.2f}%,{money(2000 * fsum(cost.values()) / total_af)}")
         for f, lb in recipe.items():
             lines.append(f",{quoted(f)},{af[f]:.2f},{lb:.2f},{money(cost[f])},{FEEDS[f][0]:.2f}%,{money(FEEDS[f][1])}")
     return lines
