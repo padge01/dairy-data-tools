@@ -19,6 +19,7 @@
   python dairy.py exits     --folder F                         who left, and when
   python dairy.py weekly    --folder F [--milk-price 21.5]     all of it, for a visit
   python dairy.py card      --folder F --pen 21 | --cow 3004 | --feed | --weekly [--actions FILE] [--out FILE]
+                            [--slide: bigger and fewer items, for a projector; --pen and --feed]
 
 Add --json FILE to any of them for every figure (cards are drawn from it). Read-only: the folder is never changed and
 nothing is sent anywhere. Python 3.10 or later, standard library only.

@@ -4,10 +4,10 @@ count, nothing coloured that isn't also labelled."""
 
 from __future__ import annotations
 
-from datetime import date
+from datetime import date, timedelta
 
 from . import feeding, weekly
-from .cards import CSS, esc
+from .cards import CSS, _recipe, esc, ration_bars
 from .herd import Herd
 
 PAGE_CSS = """
@@ -28,6 +28,8 @@ padding:22px 30px 16px}
 .div .pos{display:flex;justify-content:flex-start}.div .bar{height:14px;background:var(--bar)}
 .div .neg .bar{border-radius:3px 0 0 3px}.div .pos .bar{border-radius:0 3px 3px 0}
 .div .val{font-size:13.5px;font-weight:650;padding-left:10px;white-space:nowrap}.div .axis{font-size:12px;color:var(--text3)}
+.slide .rations{grid-template-columns:repeat(auto-fit,minmax(280px,1fr))}.slide .rations h3{font-size:24px}
+.slide .rations .trow{grid-template-columns:repeat(3,1fr);margin:4px 0 6px}.slide .t .v{font-size:22px}
 .pen{display:grid;grid-template-columns:150px 1fr 260px;gap:18px;align-items:start;padding:12px 0;
 border-bottom:1px solid var(--subtle)}.pen:last-child{border:0}
 .pen .who{font-size:26px;font-weight:700;line-height:1.1}.pen .who small{display:block;font-size:13px;font-weight:400;
@@ -44,10 +46,10 @@ border:1.5px solid var(--line);border-radius:4px;margin-top:3px}.act .who{font-s
 """
 
 
-def _page(title: str, sub: str, body: str, foot: str) -> str:
+def _page(title: str, sub: str, body: str, foot: str, slide: bool = False) -> str:
     return ("<!doctype html><html lang='en'><head><meta charset='utf-8'><meta name='viewport' "
             f"content='width=device-width,initial-scale=1'><title>{esc(title)}</title><style>{CSS}{PAGE_CSS}</style>"
-            f"</head><body><div class='page'><div class='head'><h1>{esc(title)}</h1><span>{esc(sub)}</span></div>"
+            f"</head><body{' class=slide' if slide else ''}><div class='page'><div class='head'><h1>{esc(title)}</h1><span>{esc(sub)}</span></div>"
             f"{body}<div class='foot'>{esc(foot)}</div></div></body></html>")
 
 
@@ -83,7 +85,9 @@ def _num(v, places=1):
 
 # --- pen feed --------------------------------------------------------------------------------------------------------
 
-def pen_feed_html(herd: Herd, milk_price: float | None = None, days: int = 7) -> str:
+def pen_feed_html(herd: Herd, milk_price: float | None = None, days: int = 7, slide: bool = False) -> str:
+    """Each pen's feed against its milk, each pen's ration as bars, loading. slide: for a projector, bigger and
+    with fewer items (each pen's three figures and its ration)."""
     pf = feeding.pen_feed(herd, days=days, milk_price=milk_price)
     pens = [p for p in pf["pens"] if p.get("tested")]
     span = ""
@@ -106,7 +110,7 @@ def pen_feed_html(herd: Herd, milk_price: float | None = None, days: int = 7) ->
             f"</div><div class='trow'>{tile('ECM per lb DM', _num(p.get('ecm_per_lb_dm'), 2))}"
             f"{tile('DM fed per cow', _num(dmi), ' lb', moved)}"
             f"{tile('Feed cost per cwt', _money(p.get('feed_cost_per_cwt')))}</div>"
-            f"<div class='facts'>{'<br>'.join(facts)}</div></div>")
+            + ("" if slide else f"<div class='facts'>{'<br>'.join(facts)}</div>") + "</div>")
     eff = hbars([(f"Pen {p['pen']}", p.get("ecm_per_lb_dm"), "") for p in pens], fmt="{:.2f}")
     cwt = hbars([(f"Pen {p['pen']}", p.get("feed_cost_per_cwt"), "") for p in pens], fmt="${:.2f}")
     loading = "<p class='muted'>No Ingredient Intake report in the folder.</p>"
@@ -127,8 +131,28 @@ def pen_feed_html(herd: Herd, milk_price: float | None = None, days: int = 7) ->
     except SystemExit:
         pass
     end = herd.as_of
+    recipes = {p["pen"]: _recipe(herd, p["ezfeed_pen"], end - timedelta(days=days - 1), end) for p in pens}
+    top = max((v for r in recipes.values() for v in r.values()), default=None)   # one scale for every pen
+    rations = []
+    for p in pens:
+        if recipes[p["pen"]]:
+            figs = ""
+            if slide:   # each pen's three figures over its ration, one column a pen
+                figs = (f"<div class='sub'>{p['cows']} cows</div><div class='trow'>"
+                        f"{tile('ECM per lb DM', _num(p.get('ecm_per_lb_dm'), 2))}"
+                        f"{tile('DM fed', _num(p.get('dmi_lb_per_cow')), ' lb')}"
+                        f"{tile('Feed per cwt', _money(p.get('feed_cost_per_cwt')))}</div>")
+            rations.append(f"<div><h3>Pen {esc(p['pen'])}</h3>{figs}{ration_bars(recipes[p['pen']], top=top)}</div>")
+    ration_sec = (f"<div class='sec'><h2>Each pen's ration</h2><p class='note'>lb of dry matter per cow, called for, "
+                  f"the last {days} days; grouped by feed type</p><div class='rations'>{''.join(rations)}</div></div>"
+                  if rations else "")
+    if slide:
+        body = (f"<div class='sec'><p class='note'>{esc(span)}. Per cow uses DairyComp's head count. Rations: lb of dry "
+                f"matter per cow, called for, grouped by feed type.</p><div class='rations'>{''.join(rations)}</div></div>")
+        return _page("Pen feed", f"{len(pens)} milking pens · {days} days to {end:%b} {end.day}", body,
+                     f"From DairyComp and EZfeed's reports. Records end {end:%b %d, %Y}.", slide=True)
     body = (f"<div class='sec'><h2>Each pen</h2><p class='note'>{esc(span)}. Per cow uses DairyComp's head count.</p>"
-            f"{''.join(blocks)}</div>"
+            f"{''.join(blocks)}</div>{ration_sec}"
             f"<div class='sec two'><div><h2>ECM per lb of dry matter</h2><p class='note'>Each pen's own figure; compare "
             f"it with its own past weeks</p>{eff}</div><div><h2>Feed cost per cwt of milk</h2><p class='note'>Feed cost "
             f"per cow over its milk at the last test</p>{cwt}</div></div>"

@@ -54,3 +54,5 @@ python scripts/dairy.py card --folder "Farm Exports" --feed [--milk-price 21.50]
 ```
 
 Show the page to the person unchanged: in Claude's chat as an HTML artifact with the file's content exactly as written (don't redraw it or change its numbers); in Claude Code, Cowork or another agent, give them the file to open. The card carries its own sources and definitions.
+
+For a talk or a meeting room screen, add `--slide`: bigger type and fewer items (the pen card keeps ECM, the feeds that moved and the season check; the pen-feed card keeps each pen's three figures and its ration), sized for a 16:9 slide.

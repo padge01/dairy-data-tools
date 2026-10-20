@@ -341,3 +341,26 @@ def test_the_icon_is_a_square_png_the_directory_accepts():
     assert data[:4] == bytes([0x89]) + b"PNG" and len(data) < 2 * 1024 * 1024
     width, height = int.from_bytes(data[16:20], "big"), int.from_bytes(data[20:24], "big")
     assert width == height and 512 <= width <= 2048
+
+
+def test_ration_bars_name_every_feed_and_its_pounds():
+    """Colour is never the only cue: every bar carries its feed's name and pounds, and its group names the feed type."""
+    sys.path.insert(0, str(ROOT / "tools"))
+    from dairytools.cards import feed_type, ration_bars
+    page = ration_bars({"Corn silage, 2026 pile": 16.4, "Canola meal": 6.6, "Water": 9.0},
+                       {"Corn silage, 2025 pile": 15.6, "Canola meal": 5.9})
+    for words in ("Corn silage, 2026 pile", "Corn silage, 2025 pile", "16.4", "15.6", "5.9", "6.6", "Forages",
+                  "Proteins", "new", "off"):
+        assert words in page, words
+    assert "Water" not in page
+    assert feed_type("Whole cottonseed")[0] == "By-products" and feed_type("Wheat silage")[0] == "Forages"
+
+
+def test_slide_cards_are_bigger_with_fewer_items(tmp_path):
+    for flag, name in (("--pen", "21"), ("--feed", None)):
+        args = ["card", "--folder", str(HERD), flag] + ([name] if name else []) + ["--slide", "--out",
+                                                                                   str(tmp_path / "s.html")]
+        code, out = run(DAIRY, *args)
+        assert code == 0, out
+        page = (tmp_path / "s.html").read_text(encoding="utf-8")
+        assert "class=slide" in page and "Health, last" not in page and "Loading, fed against" not in page

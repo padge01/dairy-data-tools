@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import html
 import math
+import re
 from collections import defaultdict
 from datetime import date, timedelta
 
@@ -19,10 +20,11 @@ from .stats import ecm_lb, mean, quantile
 CSS = """
 :root{--canvas:#fafaf9;--surface:#fff;--raised:#f0f2ef;--text:#0a0a0a;--text2:#626762;--text3:#6b726c;--border:#dedfdc;--subtle:#efefec;
 --line:#bfc3be;--bar:#cfd3ce;--ink:#0a0a0a;--l1:#c9a93a;--l2:#e08a2c;--l3:#9a6a43;--mark:#2b302c;
+--forage:#6f9a52;--grain:#c9a93a;--protein:#5a80aa;--fat:#e08a2c;--byproduct:#a47b55;--mineral:#8f948f;--other:#b5b9b4;
 --sans:'Inter Variable','Inter','Segoe UI',system-ui,sans-serif}
 @media (prefers-color-scheme:dark){:root{--canvas:#0d110f;--surface:#151a17;--raised:#1d241f;--text:#f1f4f2;--text2:#aab3ad;
 --text3:#7d8a82;--border:#323b35;--subtle:#232b26;--line:#4a564e;--bar:#3a463f;--ink:#f1f4f2;--l1:#e6cf7a;--l2:#f0a24a;
---l3:#c08a5c;--mark:#c9d1cb}}
+--l3:#c08a5c;--mark:#c9d1cb;--forage:#8cb56c;--grain:#e6cf7a;--protein:#86a9cf;--fat:#f0a24a;--byproduct:#c49a74;--mineral:#8f9a93;--other:#5d6660}}
 *{box-sizing:border-box}body{margin:0;background:var(--canvas);color:var(--text);font-family:var(--sans)}
 .card{max-width:1180px;margin:24px auto;background:var(--surface);border:1px solid var(--border);border-radius:22px;
 padding:22px 30px 18px}
@@ -32,11 +34,12 @@ padding:22px 30px 18px}
 .tile{padding:12px 18px 14px 0;border-right:1px solid var(--subtle);margin-right:18px}.tile:last-child{border:0;margin:0}
 .k{font-size:15px;color:var(--text2)}.v{font-size:28px;font-weight:650;margin:2px 0}.v small{font-size:15px;
 font-weight:400;color:var(--text2);margin-left:6px}.n{font-size:14px;color:var(--text3)}
-.body{display:grid;grid-template-columns:1fr 330px;gap:26px;padding-top:12px}
+.body{display:grid;grid-template-columns:1fr 390px;gap:26px;padding-top:12px}
 .side{border:1px solid var(--border);border-radius:16px;padding:16px 18px;align-self:stretch}
 .side h2{font-size:16px;margin:0 0 8px;font-weight:650}.side p,.side li{font-size:15px;line-height:1.45;margin:0 0 8px}
 .side ul{padding-left:18px;margin:0 0 8px}
-.left{display:flex;flex-direction:column}.below{margin-top:18px;flex:1;display:flex}.below .side{flex:1;display:flex;flex-direction:column;justify-content:center}
+.left{display:flex;flex-direction:column}.below{margin-top:18px;flex:1;display:flex;flex-direction:column;gap:16px}
+.below .side{display:flex;flex-direction:column;justify-content:center}.below .side:last-child{flex:1}
 .figs{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin:6px 0 4px}.figs .v{font-size:32px}
 .side h2{margin-top:14px}.side h2:first-child{margin-top:0}.sub{font-size:12.5px;color:var(--text3);margin:2px 0 6px}
 .chips{display:flex;flex-wrap:wrap;gap:6px}.chip2{display:inline-grid;padding:5px 10px;border-radius:10px;
@@ -48,6 +51,15 @@ background:var(--raised);font-size:13px;font-weight:600;white-space:nowrap}.chip
 .foot{font-size:12.5px;color:var(--text3);border-top:1px solid var(--subtle);margin-top:12px;padding-top:8px}
 svg text{font-family:var(--sans);fill:var(--text2)}svg .lab{fill:var(--text)}
 .body>*,.tiles>*,.figs>*{min-width:0}
+.rg{font-size:11.5px;letter-spacing:.04em;text-transform:uppercase;color:var(--text3);margin:9px 0 2px}
+.rb{display:grid;grid-template-columns:minmax(0,10.5em) minmax(40px,1fr) auto;gap:10px;align-items:center;font-size:13.5px;padding:2px 0}
+.rb .nm{line-height:1.2}.rb .tr{position:relative;height:13px}
+.rb .fl{position:absolute;left:0;top:0;bottom:0;border-radius:3px}.rb .off{border:1.5px dashed var(--line);background:transparent}
+.rb .tk{position:absolute;top:-3px;bottom:-3px;width:2px;background:var(--ink)}
+.rb .lb{font-weight:650;white-space:nowrap;text-align:right}.rb .lb small{font-weight:400;color:var(--text2)}
+.rations{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:12px 30px}
+.rations h3{font-size:16px;margin:0 0 2px;font-weight:650}
+body.slide .card,body.slide .page{zoom:1.5;max-width:1060px;margin:14px auto}
 @media (max-width:1060px){.body{grid-template-columns:1fr}}
 @media (max-width:820px){.tiles{grid-template-columns:repeat(2,1fr)}.head h1{font-size:34px}
 .card{margin:8px;padding:16px}.figs .v{font-size:24px}}
@@ -195,8 +207,84 @@ def time_chart(rows, change: date | None, start: date, end: date, width=760) -> 
     return "".join(out)
 
 
+FEED_TYPES = (   # (type, words in the feed's name); the first match wins, so silage counts as forage
+    ("Forages", "forage", r"silage|haylage|\bhay\b|straw|alfalfa|lucerne|pasture|grass|baleage|green ?chop|forage"),
+    ("Minerals and additives", "mineral", r"mineral|premix|vitamin|\bsalt\b|buffer|bicarb|limestone|rumensin|"
+     r"monensin|yeast|additive|binder|magnesium|mag ox|selenium|\bvit\b|\bmix\b"),
+    ("Fats", "fat", r"\bfat\b|tallow|bypass|megalac|\boil\b|calcium salts|energizer"),
+    ("By-products", "byproduct", r"hull|cottonseed|pulp|\bbran\b|middlings|midds|by-?product|screenings|cannery|peel"),
+    ("Proteins", "protein", r"canola|\bsoy|distillers|ddgs|gluten|\bmeal\b|blood|fish|urea|amino|protein"),
+    ("Grains and energy", "grain", r"corn|maize|barley|wheat|sorghum|milo|\boats?\b|hominy|bakery|molasses|grain|"
+     r"starch|flake"),
+)
+
+
+def feed_type(name: str) -> tuple[str, str]:
+    """(type in words, colour name) for a feed, from its name; "Other feeds" when nothing matches."""
+    for words, colour, pattern in FEED_TYPES:
+        if re.search(pattern, name, re.I):
+            return words, colour
+    return "Other feeds", "other"
+
+
+def ration_bars(after: dict, before: dict | None = None, only_moved: bool = False, top: float | None = None) -> str:
+    """One bar per feed, lb of dry matter per cow, grouped and coloured by feed type. Every bar carries its feed's
+    name and pounds, and its group is named, so colour is never the only cue. With `before`, a tick marks each feed's
+    amount before and the label reads before -> after; feeds that came off show as an empty dashed bar. `top`: the
+    pounds a full bar stands for, so several pens' bars share one scale."""
+    not_feed = re.compile(r"^\s*(water|push ?out)\s*$", re.I)   # in some recipes, but not feeds
+    after = {k: v for k, v in after.items() if not not_feed.match(k)}
+    before = {k: v for k, v in (before or {}).items() if not not_feed.match(k)}
+    feeds = sorted(set(after) | set(before))
+    moved = [k for k in feeds if abs(after.get(k, 0.0) - before.get(k, 0.0)) >= .25] if before else feeds
+    show = moved if only_moved else feeds
+    if not show:
+        return "<p class='sub'>No feeds recorded.</p>"
+    top = top or max(max(after.get(k, 0.0), before.get(k, 0.0)) for k in show) or 1
+    groups = defaultdict(list)
+    for k in show:
+        groups[feed_type(k)].append(k)
+    order = [(w, c) for w, c, _ in FEED_TYPES] + [("Other feeds", "other")]
+    out = []
+    for words, colour in order:
+        ks = sorted(groups.get((words, colour), []), key=lambda k: -max(after.get(k, 0.0), before.get(k, 0.0)))
+        if not ks:
+            continue
+        out.append(f"<div class='rg'>{esc(words)}</div>")
+        for k in ks:
+            a, b = before.get(k, 0.0), after.get(k, 0.0)
+            changed = bool(before) and k in moved
+            if changed and b < .05:
+                bar = f"<div class='fl off' style='width:{100 * a / top:.1f}%'></div>"
+                label = f"<small>off · was</small> {a:.1f}"
+            else:
+                bar = f"<div class='fl' style='width:{max(1.5, 100 * b / top):.1f}%;background:var(--{colour})'></div>"
+                if changed and a >= .05:
+                    bar += f"<div class='tk' style='left:{100 * a / top:.1f}%'></div>"
+                label = (f"<small>new ·</small> {b:.1f}" if changed and a < .05 else
+                         f"<small>{a:.1f} →</small> {b:.1f}" if changed else f"{b:.1f}")
+            out.append(f"<div class='rb'><span class='nm' title='{esc(k)}'>{esc(k)}</span><div class='tr'>{bar}</div>"
+                       f"<span class='lb'>{label} <small>lb</small></span></div>")
+    if only_moved and len(feeds) > len(show):
+        n = len(feeds) - len(show)
+        out.append(f"<div class='sub'>{n} other feed{'s' if n != 1 else ''} unchanged</div>")
+    return "".join(out)
+
+
+def _recipe(herd: Herd, ezfeed_pen: str, first: date, last: date) -> dict:
+    """The pen's recipe, lb of dry matter per head called for, averaged over the days from first to last."""
+    by_day = defaultdict(dict)
+    for r in herd.feed.get("feed_delivery", []):
+        if r["pen"] == ezfeed_pen and not r.get("premix") and r.get("target_dm_lb_per_head") \
+                and first <= r["date"] <= last:
+            by_day[r["date"]][r["ingredient"]] = r["target_dm_lb_per_head"]
+    feeds = {k for d in by_day for k in by_day[d]}
+    return {k: sum(by_day[d].get(k, 0.0) for d in by_day) / len(by_day) for k in feeds} if by_day else {}
+
+
 def _recipe_changes(herd: Herd, ezfeed_pen: str):
-    """Days the pen's recipe changed (a feed in or out, or a share moving half a point), with the feeds that moved."""
+    """Days the pen's recipe changed (a feed in or out, or a share moving half a point): (day, the feeds that moved,
+    the recipe the week before, the recipe the week after)."""
     by_day = defaultdict(dict)
     for r in herd.feed.get("feed_delivery", []):
         if r["pen"] == ezfeed_pen and not r.get("premix") and r.get("target_dm_lb_per_head"):
@@ -220,7 +308,7 @@ def _recipe_changes(herd: Herd, ezfeed_pen: str):
             wb = week(b, b + timedelta(days=6))
             moved = [(k, wa.get(k, 0.0), wb.get(k, 0.0)) for k in sorted(set(wa) | set(wb))
                      if abs(wa.get(k, 0.0) - wb.get(k, 0.0)) >= .25]
-            out.append((b, moved))
+            out.append((b, moved, wa, wb))
     return out
 
 
@@ -232,9 +320,10 @@ def _shift_years(d, years):
     except ValueError:
         return d.replace(year=d.year + years, day=28)
 
-def pen_card_html(herd: Herd, pen, pen_milk: dict | None = None, days: int = 75) -> str:
+def pen_card_html(herd: Herd, pen, pen_milk: dict | None = None, days: int = 75, slide: bool = False) -> str:
     """Pen 21's card: who is in it, their milk, their stage, intake; ECM and intake by day with a ration change
-    marked and last fall's same weeks beside this fall's; what changed. pen_milk: {(pen, date): {milk, fat, protein}}."""
+    marked and last fall's same weeks beside this fall's; the ration as bars. pen_milk: {(pen, date): {milk, fat,
+    protein}}. slide: for a projector, bigger and with fewer items (ECM only, the feeds that moved, no health or feed)."""
     pc = explorer.pen_card(herd, pen)
     t = pc["test"]
     pen = pc["pen"]
@@ -294,20 +383,23 @@ def pen_card_html(herd: Herd, pen, pen_milk: dict | None = None, days: int = 75)
         this, last = ecm_series(0), ecm_series(-1)
         rows.append(("ECM, lb per cow", "lb", [("this fall", "thin", this), ("this fall", "bold", _week_avg(this)),
                                               ("last fall", "dashed", _week_avg(last))]))
-    if intake_series:
+    if intake_series and not slide:
         rows.append(("Intake, lb of dry matter per cow", "lb", [("fed", "bold", intake_series)]))
-    chart = time_chart(rows, change, start, end) if rows else "<p>No daily records for this pen.</p>"
-    # Side: what changed, and the season beside it.
+    # A slide draws the chart narrower, so its words come out bigger.
+    chart = (time_chart(rows, change, start, end, width=560 if slide else 760) if rows
+             else "<p>No daily records for this pen.</p>")
+    # Side: the ration as bars (what changed marked), and the season beside it.
     side = []
+    ecm_since = ""
     if changes:
-        d, moved = changes[-1]
-        rows_html = "".join(
-            f"<div class='feedrow'><span>{esc(k)}</span>"
-            + (f"<span class='chip new'>new · {b:.1f} lb</span>" if a < .05 else
-               f"<span class='chip gone'>off · was {a:.1f} lb</span>" if b < .05 else
-               f"<span class='chip'>{a:.1f} → {b:.1f} lb</span>") + "</div>"
-            for k, a, b in moved)
-        side.append(f"<h2>Ration change, {_fmt_date(d)}</h2><div class='sub'>lb of dry matter per cow</div>{rows_html}")
+        d, _, wa, wb = changes[-1]
+        side.append(f"<h2>Ration change, {_fmt_date(d)}</h2><div class='sub'>lb of dry matter per cow, called for: the "
+                    f"week after; a tick marks the week before</div>{ration_bars(wb, wa, only_moved=slide)}")
+    elif feed:
+        recipe = _recipe(herd, feed["ezfeed_pen"], end - timedelta(days=6), end)
+        if recipe:
+            side.append(f"<h2>Ration, last 7 days</h2><div class='sub'>lb of dry matter per cow, called for</div>"
+                        f"{ration_bars(recipe)}")
     if pen_milk and change:
         def wk(year_shift, a, b):
             vals = []
@@ -323,27 +415,31 @@ def pen_card_html(herd: Herd, pen, pen_milk: dict | None = None, days: int = 75)
         now = wk(0, *after) - wk(0, *before) if wk(0, *after) and wk(0, *before) else None
         then = wk(-1, *after) - wk(-1, *before) if wk(-1, *after) and wk(-1, *before) else None
         if now is not None and then is not None:
-            side.append(f"<h2>ECM since {_fmt_date(change)}</h2><div class='chips'>"
-                        f"{chip('This fall', f'{now:+.1f} lb')}{chip('Last fall, no change', f'{then:+.1f} lb')}</div>"
-                        f"<div class='sub'>The week before against the week to {_fmt_date(end)}, per cow</div>")
-    # Feed goes under the charts when the ration change fills the side, so both columns end together.
-    below = []
-    if pc["health"]:
-        side.append(f"<h2>Health, last {pc['days']} days</h2><div class='chips'>" + "".join(
+            note = f"The week before against the week to {_fmt_date(end)}, per cow"
+            if slide:   # the slide's point, as big figures under the chart
+                ecm_since = (f"<h2>ECM since {_fmt_date(change)}</h2><div class='figs'>"
+                             f"<div><div class='k'>This fall</div><div class='v'>{now:+.1f} lb</div></div>"
+                             f"<div><div class='k'>Last fall, no change</div><div class='v'>{then:+.1f} lb</div></div>"
+                             f"<div><div class='k'>Left for the ration</div><div class='v'>{now - then:+.1f} lb</div>"
+                             f"</div></div><div class='sub'>{note}</div>")
+            else:
+                side.append(f"<h2>ECM since {_fmt_date(change)}</h2><div class='chips'>"
+                            f"{chip('This fall', f'{now:+.1f} lb')}{chip('Last fall, no change', f'{then:+.1f} lb')}"
+                            f"</div><div class='sub'>{note}</div>")
+    # Feed and health go under the charts, so both columns end together; a slide has only the ECM figures there.
+    below = [ecm_since] if ecm_since else []
+    if pc["health"] and not slide:
+        below.append(f"<h2>Health, last {pc['days']} days</h2><div class='chips'>" + "".join(
             chip(h["event"].capitalize(), f"{h['cows']} cow{'s' if h['cows'] != 1 else ''}") for h in pc["health"])
             + "</div><div class='sub'>Cows in the pen now</div>")
-    if feed and feed.get("ecm_per_lb_dm"):
+    if feed and feed.get("ecm_per_lb_dm") and not slide:
         efficiency = format(feed["ecm_per_lb_dm"], ".2f")
         per_cow = "$" + format(feed["feed_cost_per_cow"], ".2f") if feed.get("feed_cost_per_cow") is not None else "n/a"
         per_cwt = "$" + format(feed["feed_cost_per_cwt"], ".2f") if feed.get("feed_cost_per_cwt") else "n/a"
         figures = (("ECM per lb DM", efficiency), ("Feed per cow", per_cow), ("Feed per cwt", per_cwt))
-        if changes:   # under the charts: big figures, like the tiles, filling the box
-            below.append("<h2>Feed, last 7 days</h2><div class='figs'>" + "".join(
-                f"<div><div class='k'>{esc(k)}</div><div class='v'>{esc(v)}</div></div>" for k, v in figures)
-                + "</div><div class='sub'>Delivered feed, per cow in the pen</div>")
-        else:         # no ration change: feed joins the side, as chips
-            side.append("<h2>Feed, last 7 days</h2><div class='chips'>" + "".join(chip(k, v) for k, v in figures)
-                        + "</div>")
+        below.insert(0, "<h2>Feed, last 7 days</h2><div class='figs'>" + "".join(
+            f"<div><div class='k'>{esc(k)}</div><div class='v'>{esc(v)}</div></div>" for k, v in figures)
+            + "</div><div class='sub'>Delivered feed, per cow in the pen</div>")
     below_html = ("<div class='below'>" + "".join(f"<div class='side'>{b}</div>" for b in below) + "</div>") if below else ""
     kinds = {f["kind"] for f in herd.files}
     sources = ["DairyComp's cow, test and event reports" if "events" in kinds else "DairyComp's cow report"]
@@ -355,9 +451,9 @@ def pen_card_html(herd: Herd, pen, pen_milk: dict | None = None, days: int = 75)
     kind = {"milking": "Milking cows", "dry": "Dry cows", "heifer": "Heifers"}.get(pc["summary"]["kind"], "Mixed")
     return (f"<!doctype html><html lang='en'><head><meta charset='utf-8'><meta name='viewport' "
             f"content='width=device-width,initial-scale=1'><title>Pen {esc(pen)}</title><style>{CSS}</style></head>"
-            f"<body><div class='card'><div class='head'><h1>Pen {esc(pen)}</h1><span>{len(cows)} cows · {kind} · "
+            f"<body{' class=slide' if slide else ''}><div class='card'><div class='head'><h1>Pen {esc(pen)}</h1><span>{len(cows)} cows · {kind} · "
             f"{_fmt_date(start)} to {_fmt_date(end)}</span></div><div class='tiles'>{tile_html}</div>"
             f"<div class='body'><div class='left'>{chart}{below_html}</div><div class='side'>{''.join(side) or '<p>No changes recorded.</p>'}"
-            f"</div></div><div class='foot'>From {esc(files)}. Records end {end:%b %d, %Y}. ECM = 0.327 × milk + "
+            f"</div></div><div class='foot'>From {esc(files) if not slide else 'DairyComp and EZfeed'}. Records end {end:%b %d, %Y}. ECM = 0.327 × milk + "
             f"12.95 × fat lb + 7.65 × protein lb, worked out here. Intake is delivered, per DairyComp head.</div></div>"
             f"</body></html>")
