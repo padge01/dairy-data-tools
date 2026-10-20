@@ -25,6 +25,7 @@ from datetime import date, timedelta
 from pathlib import Path
 
 from . import commands, io, reference
+from .stats import quantile
 
 
 @dataclass
@@ -41,6 +42,8 @@ class Herd:
     as_of: date | None = None
     events_from: date | None = None
     milk_words: str = "last test"   # or "latest daily weight" when the herd has no milk tests
+    pen_milk_days: dict = field(default_factory=dict)   # {(pen, day): {low, mid, high, cows}} from daily weights
+    milk_history: dict = field(default_factory=dict)    # {cow number: [{day, lb, dim, kind}]}, daily or test
 
     def status(self, cow: dict) -> str:
         """milking, dry, heifer, left or unknown: one rule for every count."""
@@ -96,6 +99,52 @@ def pen_label(pen) -> str:
     s = str(pen).strip()
     n = io.number(s)
     return str(int(n)) if n is not None and n == int(n) else s
+
+
+DATED = re.compile(r"(20\d\d)[-_]?(\d\d)[-_]?(\d\d)")
+
+
+def _dated(paths):
+    """Cow reports by the day in their file name (DCINFO2_20261019.csv), and those without one."""
+    by_day, undated = defaultdict(list), []
+    for p in paths:
+        m = DATED.search(Path(p).stem)
+        try:
+            by_day[date(int(m[1]), int(m[2]), int(m[3]))].append(p)
+        except (TypeError, ValueError):
+            undated.append(p)
+    return by_day, undated
+
+
+def _pen_milk_days(by_day, newest: date, days: int = 400):
+    """From several snapshots of the cow report: each pen's milk by day from each day's DMLK1 (the day's parlor
+    weight: the middle cow and the middle 80%), and each cow's milk history, her daily weights or her tests (each
+    snapshot holds her latest test: TDAT and MILK)."""
+    out, history = {}, defaultdict(dict)
+    for day, paths in by_day.items():
+        if (newest - day).days > days:
+            continue
+        pens = defaultdict(list)
+        for p in paths:
+            for r in io.read_dc_export(p):
+                cow = (r.get("ID") or "").strip()
+                w = io.number(r.get("DMLK1"))
+                dim = io.number(r.get("DIM"))
+                if w and w > 0:
+                    if r.get("PEN") is not None:
+                        pens[pen_label(r["PEN"])].append(w)
+                    if cow:
+                        history[cow][("daily", day)] = {"day": day, "lb": w, "dim": dim, "kind": "daily"}
+                tdat, milk = io.parse_dc_date(r.get("TDAT")), io.number(r.get("MILK"))
+                if cow and tdat and milk and milk > 0:
+                    fresh = io.parse_dc_date(r.get("FDAT"))
+                    history[cow][("test", tdat)] = {"day": tdat, "lb": milk, "kind": "test",
+                                                    "dim": (tdat - fresh).days if fresh else None}
+        for pen, ws in pens.items():
+            if len(ws) >= 5:
+                out[(pen, day)] = {"low": quantile(ws, .1), "mid": quantile(ws, .5), "high": quantile(ws, .9),
+                                   "cows": len(ws)}
+    return out, {cow: sorted(points.values(), key=lambda p: p["day"]) for cow, points in history.items()}
 
 
 def _cow_rows(paths) -> list[dict]:
@@ -263,6 +312,13 @@ def load(folder, as_of: date | None = None) -> Herd:
     if item_paths:
         herd.items = io.read_item_list(item_paths[0])
 
+    by_day, undated = _dated(cow_paths)
+    if len(by_day) >= 2:   # several days of cow reports: the newest is the herd, all of them give each pen's day
+        newest = max(by_day)
+        cow_paths = undated + by_day[newest]
+        herd.pen_milk_days, herd.milk_history = _pen_milk_days(by_day, newest)
+        herd.problems.append(f"{len(by_day)} days of cow reports: the herd is the one dated {newest}; the others give "
+                             "each pen's milk by day")
     raw_cows = _cow_rows(cow_paths) if cow_paths else []
     raw_events = [r for p in event_paths for r in io.read_dc_export(p)]
     spilled = sum(1 for r in raw_cows + raw_events if r.pop("_spilled", None) is not None)

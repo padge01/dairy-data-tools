@@ -20,11 +20,11 @@ from .stats import ecm_lb, mean, quantile
 CSS = """
 :root{--canvas:#fafaf9;--surface:#fff;--raised:#f0f2ef;--text:#0a0a0a;--text2:#626762;--text3:#6b726c;--border:#dedfdc;--subtle:#efefec;
 --line:#bfc3be;--bar:#cfd3ce;--ink:#0a0a0a;--l1:#c9a93a;--l2:#e08a2c;--l3:#9a6a43;--mark:#2b302c;
---forage:#6f9a52;--grain:#c9a93a;--protein:#5a80aa;--fat:#e08a2c;--byproduct:#a47b55;--mineral:#8f948f;--other:#b5b9b4;
+--forage:#6f9a52;--grain:#c9a93a;--protein:#5a80aa;--fat:#e08a2c;--byproduct:#a47b55;--mineral:#8f948f;--other:#b5b9b4;--feed:#b8962a;--feedwash:rgba(201,169,58,.20);
 --sans:'Inter Variable','Inter','Segoe UI',system-ui,sans-serif}
 @media (prefers-color-scheme:dark){:root{--canvas:#0d110f;--surface:#151a17;--raised:#1d241f;--text:#f1f4f2;--text2:#aab3ad;
 --text3:#7d8a82;--border:#323b35;--subtle:#232b26;--line:#4a564e;--bar:#3a463f;--ink:#f1f4f2;--l1:#e6cf7a;--l2:#f0a24a;
---l3:#c08a5c;--mark:#c9d1cb;--forage:#8cb56c;--grain:#e6cf7a;--protein:#86a9cf;--fat:#f0a24a;--byproduct:#c49a74;--mineral:#8f9a93;--other:#5d6660}}
+--l3:#c08a5c;--mark:#c9d1cb;--forage:#8cb56c;--grain:#e6cf7a;--protein:#86a9cf;--fat:#f0a24a;--byproduct:#c49a74;--mineral:#8f9a93;--other:#5d6660;--feed:#e6cf7a;--feedwash:rgba(230,207,122,.16)}}
 *{box-sizing:border-box}body{margin:0;background:var(--canvas);color:var(--text);font-family:var(--sans)}
 .card{max-width:1180px;margin:24px auto;background:var(--surface);border:1px solid var(--border);border-radius:22px;
 padding:22px 30px 18px}
@@ -39,7 +39,7 @@ font-weight:400;color:var(--text2);margin-left:6px}.n{font-size:14px;color:var(-
 .side h2{font-size:16px;margin:0 0 8px;font-weight:650}.side p,.side li{font-size:15px;line-height:1.45;margin:0 0 8px}
 .side ul{padding-left:18px;margin:0 0 8px}
 .left{display:flex;flex-direction:column}.below{margin-top:18px;flex:1;display:flex;flex-direction:column;gap:16px}
-.below .side{display:flex;flex-direction:column;justify-content:center}.below .side:last-child{flex:1}
+.below .side{display:flex;flex-direction:column;justify-content:flex-start}.below .side:last-child{flex:1}
 .figs{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin:6px 0 4px}.figs .v{font-size:32px}
 .side h2{margin-top:14px}.side h2:first-child{margin-top:0}.sub{font-size:12.5px;color:var(--text3);margin:2px 0 6px}
 .chips{display:flex;flex-wrap:wrap;gap:6px}.chip2{display:inline-grid;padding:5px 10px;border-radius:10px;
@@ -57,6 +57,7 @@ svg text{font-family:var(--sans);fill:var(--text2)}svg .lab{fill:var(--text)}
 .rb .nm{line-height:1.2}.rb .tr{position:relative;height:13px}
 .rb .fl{position:absolute;left:0;top:0;bottom:0;border-radius:3px}.rb .off{border:1.5px dashed var(--line);background:transparent}
 .rb .tk{position:absolute;top:-3px;bottom:-3px;width:2px;background:var(--ink)}
+.hr{display:grid;grid-template-columns:minmax(0,10em) minmax(40px,1fr) auto;gap:10px;align-items:center;font-size:14px;padding:3px 0}.hr .tr{position:relative;height:12px}.hr .fl{position:absolute;left:0;top:0;bottom:0;border-radius:3px;background:var(--mark)}.hr .lb{font-weight:650;white-space:nowrap}.hr .lb small{font-weight:400;color:var(--text2)}
 .rb .lb{font-weight:650;white-space:nowrap;text-align:right}.rb .lb small{font-weight:400;color:var(--text2)}
 .rations{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:12px 30px}
 .rations h3{font-size:16px;margin:0 0 2px;font-weight:650}
@@ -155,6 +156,110 @@ def _week_avg(series):
         span = [v for _, v in series[max(0, i - 6):i + 1] if v is not None]
         out.append((series[i][0], sum(span) / len(span) if span else None))
     return out
+
+
+def _runs(points):
+    """Unbroken stretches of (date, ...) points whose values are all present."""
+    out, run = [], []
+    for p in points:
+        if all(v is not None for v in p[1:]):
+            run.append(p)
+        else:
+            if len(run) > 1:
+                out.append(run)
+            run = []
+    if len(run) > 1:
+        out.append(run)
+    return out
+
+
+def day_plot(title, start: date, end: date, change: date | None = None, band=(), lines=(), fed=(), width=760,
+             height=270) -> str:
+    """Milk and dry matter fed by day on one pound scale from 0: `band` [(day, low, mid, high)] the
+    middle cow as a line with her middle 80% shaded; `lines` [(label, style, [(day, lb)])] such as a pen's ECM;
+    `fed` [(day, lb DM)] as a wash from the floor. Every line is named in words where it ends."""
+    pad_l, pad_r, top, bottom = 40, 126, 30, 26
+    ph = height - top - bottom
+    span = max((end - start).days, 1)
+    x = lambda d: pad_l + (d - start).days / span * (width - pad_l - pad_r)
+    band = [b for b in band if start <= b[0] <= end]
+    fed = [f for f in fed if start <= f[0] <= end and f[1] is not None]
+    lines = [(lab, sty, [(d, v) for d, v in s if start <= d <= end]) for lab, sty, s in lines]
+    vals = [v for b in band for v in b[1:] if v is not None] + [v for _, _, s in lines for _, v in s if v is not None] \
+        + [v for _, v in fed]
+    if not vals:
+        return ""
+    step = 25 if max(vals) <= 110 else 50
+    ymax = math.ceil(max(vals) * 1.06 / step) * step
+    y = lambda v: top + ph - v / ymax * ph
+    out = [f'<svg viewBox="0 0 {width} {height}" width="100%" role="img" aria-label="{esc(title)}, {start} to {end}">',
+           f'<text x="{pad_l - 34}" y="14" class="lab" font-size="13">{esc(title)}</text>']
+    v = 0
+    while v <= ymax:
+        out.append(f'<line x1="{pad_l}" x2="{width - pad_r}" y1="{y(v):.1f}" y2="{y(v):.1f}" stroke="var(--subtle)"/>'
+                   f'<text x="{pad_l - 6}" y="{y(v) + 4:.1f}" font-size="11" text-anchor="end">{v}</text>')
+        v += step
+    ends = []
+    for run in _runs(fed):
+        pts = " ".join(f"{x(d):.1f},{y(v):.1f}" for d, v in run)
+        out.append(f'<polygon points="{x(run[0][0]):.1f},{y(0):.1f} {pts} {x(run[-1][0]):.1f},{y(0):.1f}" '
+                   f'fill="var(--feedwash)"/><polyline points="{pts}" fill="none" stroke="var(--feed)" stroke-width="1.6"/>')
+    if fed:
+        mid = fed[len(fed) // 3]
+        out.append(f'<text x="{x(mid[0]) + 4:.1f}" y="{(y(mid[1]) + y(0)) / 2 + 4:.1f}" font-size="12.5" class="lab">'
+                   f'Dry matter fed per cow</text>')
+        ends.append([y(fed[-1][1]) + 4, x(fed[-1][0]) + 6, f'<tspan font-weight="650">{fed[-1][1]:.1f}</tspan> fed'])
+    for run in _runs(band):
+        upper = " ".join(f"{x(d):.1f},{y(hi):.1f}" for d, lo, m, hi in run)
+        lower = " ".join(f"{x(d):.1f},{y(lo):.1f}" for d, lo, m, hi in reversed(run))
+        out.append(f'<polygon points="{upper} {lower}" fill="var(--bar)" opacity=".75"/>')
+        out.append('<polyline points="' + " ".join(f"{x(d):.1f},{y(m):.1f}" for d, lo, m, hi in run)
+                   + '" fill="none" stroke="var(--ink)" stroke-width="2.2"/>')
+    if band:
+        first = band[len(band) // 3]
+        out.append(f'<text x="{x(first[0]) + 4:.1f}" y="{y(first[3]) - 7:.1f}" font-size="12.5" class="lab">'
+                   f'Milk: the middle cow (shading: the middle 80%)</text>')
+        last = band[-1]
+        ends.append([y(last[2]) + 4, x(last[0]) + 6, f'<tspan font-weight="650">{last[2]:.0f}</tspan> milk'])
+    for label, style, s in lines:
+        s = [(d, v) for d, v in s if v is not None]
+        if len(s) < 2:
+            continue
+        pts = " ".join(f"{x(d):.1f},{y(v):.1f}" for d, v in s)
+        dash = ' stroke-dasharray="5 4"' if style == "dashed" else ""
+        w = "2.4" if style == "bold" else "1.6" if style == "dashed" else "1"
+        colour = "var(--line)" if style == "thin" else "var(--ink)" if style == "bold" else "var(--text2)"
+        out.append(f'<polyline points="{pts}" fill="none" stroke="{colour}" stroke-width="{w}"{dash}/>')
+        if style != "thin":
+            d, v = s[-1]
+            ends.append([y(v) + 4, x(d) + 6, f'<tspan font-weight="650">{v:.1f}</tspan> {esc(label)}'])
+    ends.sort()   # end labels never overlap: each at least 15 px below the one above
+    for i in range(1, len(ends)):
+        ends[i][0] = max(ends[i][0], ends[i - 1][0] + 15)
+    for ly, lx, text in ends:
+        out.append(f'<text x="{lx:.1f}" y="{ly:.1f}" font-size="12.5" class="lab">{text}</text>')
+    if change and start <= change <= end:
+        cx = x(change)
+        out.append(f'<line x1="{cx:.1f}" x2="{cx:.1f}" y1="{top - 6}" y2="{y(0):.1f}" stroke="var(--ink)" '
+                   f'stroke-dasharray="3 3"/><text x="{cx + 5:.1f}" y="{top - 8}" font-size="12.5" class="lab">'
+                   f'Ration change, {_fmt_date(change)}</text>')
+    d = start
+    while d <= end:
+        if d.day in (1, 15):
+            out.append(f'<text x="{x(d):.1f}" y="{height - 6}" font-size="11.5" text-anchor="middle">{_fmt_date(d)}</text>')
+        d += timedelta(days=1)
+    out.append("</svg>")
+    return "".join(out)
+
+
+def health_rows(health, cows: int) -> str:
+    """One bar per health event: the cows with it in the last days, and how many that is in 100 cows of the pen."""
+    top = max(h["cows"] for h in health) or 1
+    return "".join(
+        f"<div class='hr'><span>{esc(h['event'].capitalize())}</span><div class='tr'><div class='fl' "
+        f"style='width:{max(3, 100 * h['cows'] / top):.0f}%'></div></div><span class='lb'>{h['cows']} "
+        f"cow{'s' if h['cows'] != 1 else ''}" + (f" <small>· {100 * h['cows'] / cows:.0f} in 100</small>" if cows else "")
+        + "</span></div>" for h in health)
 
 
 def time_chart(rows, change: date | None, start: date, end: date, width=760) -> str:
@@ -388,10 +493,16 @@ def pen_card_html(herd: Herd, pen, pen_milk: dict | None = None, days: int = 75,
         this, last = ecm_series(0), ecm_series(-1)
         rows.append(("ECM, lb per cow", "lb", [("this fall", "thin", this), ("this fall", "bold", _week_avg(this)),
                                               ("last fall", "dashed", _week_avg(last))]))
-    if intake_series and not slide:
-        rows.append(("Intake, lb of dry matter per cow", "lb", [("fed", "bold", intake_series)]))
+    # One plot, one pound scale: milk (each day's middle cow, or the pen's ECM) and the dry matter fed a cow.
+    band = sorted((d, v["low"], v["mid"], v["high"]) for (p, d), v in herd.pen_milk_days.items()
+                  if p == pen and start <= d <= end)
+    band = band if len(band) >= 2 else []
+    lines = rows[0][2] if rows else []
+    title = ("ECM and dry matter fed, lb per cow" if lines and not band else "Milk and dry matter fed, lb per cow"
+             if band or lines else "Dry matter fed, lb per cow")
     # A slide draws the chart narrower, so its words come out bigger.
-    chart = time_chart(rows, change, start, end, width=560 if slide else 760) if rows else ""
+    chart = day_plot(title, start, end, change, band=band, lines=[] if band else lines, fed=intake_series,
+                     width=560 if slide else 760)
     # Side: the current ration as bars, and the season beside the last change.
     side = []
     ecm_since = ""
@@ -429,9 +540,8 @@ def pen_card_html(herd: Herd, pen, pen_milk: dict | None = None, days: int = 75,
     # Feed and health go under the charts, so both columns end together; a slide has only the ECM figures there.
     below = [ecm_since] if ecm_since else []
     if pc["health"] and not slide:
-        below.append(f"<h2>Health, last {pc['days']} days</h2><div class='chips'>" + "".join(
-            chip(h["event"].capitalize(), f"{h['cows']} cow{'s' if h['cows'] != 1 else ''}") for h in pc["health"])
-            + "</div><div class='sub'>Cows in the pen now</div>")
+        below.append(f"<h2>Health, last {pc['days']} days</h2><div class='sub'>Cows in the pen now with each "
+                     f"event</div>{health_rows(pc['health'], len(cows))}")
     if feed and feed.get("dmi_lb_per_cow") and not slide:
         eff_key = "ecm_per_lb_dm" if feed.get("ecm_per_lb_dm") else "milk_per_lb_dm"
         efficiency = format(feed[eff_key], ".2f") if feed.get(eff_key) else "n/a"

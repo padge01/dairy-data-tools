@@ -251,3 +251,22 @@ def test_pens_that_arent_the_same_group_get_no_efficiency(tmp_path):
 def test_pushout_and_water_arent_feeds():
     assert feeding.NOT_FEED.match("Lactation Pushout") and feeding.NOT_FEED.match("Water")
     assert not feeding.NOT_FEED.match("Corn silage")
+
+
+def test_snapshots_join_into_daily_pen_milk_and_each_cows_history(tmp_path):
+    head = "ID,BDAT,LACT,PEN,DIM,DMLK1,"
+    for day, base in (("20261017", 80), ("20261018", 82), ("20261019", 84)):
+        rows = [head] + [f"{i},01/01/20,2,5,{100 + int(day[-1])},{base + i},"
+                         for i in range(1, 9)]
+        write(tmp_path, f"DCINFO2_{day}.csv", "\n".join(rows) + "\n")
+    herd = load(tmp_path)
+    assert len(herd.cows) == 8                                    # the newest snapshot is the herd, not three copies
+    days = sorted(d for (p, d) in herd.pen_milk_days)
+    assert len(days) == 3 and herd.pen_milk_days[("5", days[-1])]["mid"] == 88.5
+    assert [p["lb"] for p in herd.milk_history["1"]] == [81, 83, 85]
+
+
+def test_the_sample_herds_monthly_test_snapshots_give_a_cow_her_tests():
+    herd = load(ROOT / "plugins" / "dairy-data-tools" / "sample-herd")
+    tests = [p for p in herd.milk_history.get("3004", []) if p["kind"] == "test"]
+    assert len(tests) == 3 and len({p["day"] for p in tests}) == 3

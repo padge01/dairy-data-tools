@@ -6,6 +6,7 @@ herd simulator, with a ration-change story laid over it by `tools/make_sample_he
 | File | What it is | From |
 | --- | --- | --- |
 | `cows_2026-10-28.csv`, `tests_2026-10-28.csv` | Every animal on 28 Oct 2026 (in the herd, sold and dead), and each cow's tests | DairyComp SHOW reports, saved as CSV |
+| `tests_2026-09-28.csv`, `tests_2026-08-28.csv` | The same test report saved a month and two months earlier: together, each cow's tests over her lactation | DairyComp SHOW reports, saved monthly |
 | `events_*.csv` | Three years of events, one file a year | DairyComp EVENTS |
 | `items.csv` | The farm's item list | DairyComp ALTER\2 export |
 | `intake_2026-08-15_2026-10-28.csv`, `intake_2025-08-15_2025-10-31.csv` | Each pen's daily feed, this fall and last | EZfeed Ingredient Intake Tgt vs Act by Pen |

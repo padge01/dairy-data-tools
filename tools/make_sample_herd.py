@@ -218,6 +218,32 @@ def scale_milk(rows, keys: set, factor: float):
     return rows
 
 
+def earlier_tests(rows, months: int, rnd: random.Random):
+    """Each cow's test `months` tests earlier, on a lactation curve (Wood: milk = a t^0.2 e^-0.004t) through her latest
+    test, a little noise; only tests after her fresh date. Made up, for showing a cow's tests over a lactation."""
+    header = [h.strip().upper() for h in rows[0]]
+    keep = ["ID", "BDAT", "LACT", "FDAT", "TDAT", "MILK", "PCTF", "PCTP", "SCC"]
+    ix = {k: header.index(k) for k in keep}
+    out = [keep]
+    wood = lambda t: t ** 0.2 * math.exp(-0.004 * t)
+    for r in rows[1:]:
+        if len(r) <= max(ix.values()):
+            continue
+        tdat, fresh = dio.parse_dc_date(r[ix["TDAT"]]), dio.parse_dc_date(r[ix["FDAT"]])
+        milk = dio.number(r[ix["MILK"]])
+        if not (tdat and fresh and milk):
+            continue
+        then = tdat - timedelta(days=30 * months)
+        if (then - fresh).days < 5:
+            continue
+        lb = milk * wood((then - fresh).days) / wood(max(1, (tdat - fresh).days)) * rnd.uniform(.95, 1.05)
+        fat, protein, scc = (dio.number(r[ix[k]]) for k in ("PCTF", "PCTP", "SCC"))
+        out.append([r[ix["ID"]].strip(), r[ix["BDAT"]].strip(), r[ix["LACT"]].strip(), r[ix["FDAT"]].strip(),
+                    f"{then:%m/%d/%y}", f"{lb:.1f}", f"{(fat or 3.8) * rnd.uniform(.94, 1.06):.2f}",
+                    f"{(protein or 3.1) * rnd.uniform(.97, 1.03):.2f}", f"{max(10, (scc or 80) * rnd.uniform(.6, 1.4)):.0f}"])
+    return out
+
+
 def main():
     if OUT.exists():
         shutil.rmtree(OUT)
@@ -231,7 +257,11 @@ def main():
     factor = 89.8 / mean(ecm_lb(c["test_milk"], c["test_fat_pct"], c["test_protein_pct"]) for c in p21)
     keys = {(c["cow_id"], f"{c['birth_date']:%m/%d/%y}") for c in p21}
     write_rows(OUT / "cows_2026-10-28.csv", scale_milk(read_rows(LAB / "herd report 1.csv"), keys, factor))
-    write_rows(OUT / "tests_2026-10-28.csv", scale_milk(read_rows(LAB / "test day summary.csv"), keys, factor))
+    tests = scale_milk(read_rows(LAB / "test day summary.csv"), keys, factor)
+    write_rows(OUT / "tests_2026-10-28.csv", tests)
+    # The two monthly snapshots before it, as a farm saving the report each month would have: each cow's test then.
+    for months, name in ((1, "tests_2026-09-28.csv"), (2, "tests_2026-08-28.csv")):
+        write_rows(OUT / name, earlier_tests(tests, months, random.Random(400 + months)))
     shutil.copyfile(LAB / "item list.csv", OUT / "items.csv")
     for name in ("FeederLoad Summary.csv", "Pen Summary (Dry Cows).csv", "Refusal Summary.csv"):
         shutil.copyfile(LAB / name, OUT / name)
@@ -300,6 +330,7 @@ herd simulator, with a ration-change story laid over it by `tools/make_sample_he
 | File | What it is | From |
 | --- | --- | --- |
 | `cows_2026-10-28.csv`, `tests_2026-10-28.csv` | Every animal on 28 Oct 2026 (in the herd, sold and dead), and each cow's tests | DairyComp SHOW reports, saved as CSV |
+| `tests_2026-09-28.csv`, `tests_2026-08-28.csv` | The same test report saved a month and two months earlier: together, each cow's tests over her lactation | DairyComp SHOW reports, saved monthly |
 | `events_*.csv` | Three years of events, one file a year | DairyComp EVENTS |
 | `items.csv` | The farm's item list | DairyComp ALTER{BS}2 export |
 | `intake_2026-08-15_2026-10-28.csv`, `intake_2025-08-15_2025-10-31.csv` | Each pen's daily feed, this fall and last | EZfeed Ingredient Intake Tgt vs Act by Pen |
