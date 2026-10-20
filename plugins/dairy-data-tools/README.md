@@ -1,47 +1,60 @@
+<div align="center">
+
+<img src="https://raw.githubusercontent.com/padge01/dairy-data-tools/main/plugins/dairy-data-tools/.claude-plugin/icon.png" alt="" width="96">
+
 # Dairy Data Tools
 
-Free tools for dairy nutritionists and their AI agents. Give your agent a farm's own **DairyComp** and **EZfeed**
-exports and ask about a pen: how it's doing, what a ration change did, and whether it's just the season. The numbers
-come from small, tested scripts, not from the AI's guesswork.
+### A dairy's own DairyComp and EZfeed records, read by your AI assistant.
 
-By Pádraig Lucey, MVB, MPVM, Ph.D. ([Dairy Data Science](https://dairydatascience.com)).
+**Attach a farm's exports. Ask in plain words. Get each pen's numbers, worked out by tested scripts, not guessed.**
 
 [![PyPI](https://img.shields.io/pypi/v/dairy-data-tools?style=flat-square)](https://pypi.org/project/dairy-data-tools/)
 [![DOI](https://img.shields.io/badge/DOI-10.5281%2Fzenodo.23493936-blue?style=flat-square)](https://doi.org/10.5281/zenodo.23493936)
 [![License](https://img.shields.io/badge/license-Apache--2.0-blue?style=flat-square)](LICENSE)
 
-## Get it
+[Quick start](#quick-start) · [Other apps](#other-apps) · [What's in it](#whats-in-it) · [Your files](#what-it-does-with-your-files)
 
-**In the Claude app** (desktop or claude.ai, a paid plan with code execution on): Customize > Plugins > Add marketplace >
-`padge01/dairy-data-tools`, then Add **Dairy Data Tools**. Attach the farm's export files to a chat and ask.
+Free, for dairy vets, nutritionists and consultants. By Pádraig Lucey, MVB, MPVM, Ph.D.
+([Dairy Data Science](https://dairydatascience.com)).
 
-**In Claude Code:**
+</div>
 
-```bash
-claude plugin marketplace add padge01/dairy-data-tools
+---
+
+## Quick start
+
+### 1. Add it to Claude
+
+In the Claude app (desktop or [claude.ai](https://claude.ai), on a paid plan):
+
+1. **Settings > Capabilities**: turn on **Code execution and file creation**. The scripts run in Claude's own sandbox.
+2. **Customize > Plugins > Add marketplace**: enter `padge01/dairy-data-tools`, then add **Dairy Data Tools**.
+
+Coming soon to Claude's plugin directory, for one-click install.
+
+### 2. Ask
+
+Attach the farm's DairyComp and EZfeed exports (or this kit's [sample herd](https://github.com/padge01/dairy-data-tools/tree/main/plugins/dairy-data-tools/sample-herd)) and
+ask, for example:
+
+```text
+How is pen 21 doing? Did the ration change on 28 Sep work, or is it just the season?
 ```
 
-```bash
-claude plugin install dairy-data-tools@dairy-data-tools
-```
+You get the figures, where each came from and what it's out of, and a card like this one:
 
-**In other agents** (Codex, Cursor, Gemini CLI and others that read Agent Skills):
+<p align="center"><img src="https://raw.githubusercontent.com/padge01/dairy-data-tools/main/docs/images/pen-card.png" alt="Pen 21's card from the sample herd: milk and ECM per cow as a spread, days in milk, lactation, intake, ECM and intake by day with the ration change marked, what changed in the ration, ECM since the change against last fall, health events and feed cost." width="760"></p>
 
-```bash
-npx skills add padge01/dairy-data-tools
-```
+No DairyComp export yet? Ask *"What do I type in DairyComp to export what you need?"*. It writes the SHOW commands from
+the farm's own item list.
 
-**In Python, without an agent** (Python 3.10 or later; nothing else to install):
+## Other apps
 
-```bash
-pip install dairy-data-tools
-```
-
-```bash
-dairy-data-tools pen --folder "Farm Exports" --pen 21
-```
-
-Every question has a command: `dairy-data-tools --help` lists them. The ration change is `dairy-ration-change`.
+| Where | How |
+| --- | --- |
+| **Claude Code** | `claude plugin marketplace add padge01/dairy-data-tools`, then `claude plugin install dairy-data-tools@dairy-data-tools` |
+| **Codex, Cursor, Gemini CLI** and other apps that read Agent Skills | `npx skills add padge01/dairy-data-tools` |
+| **Python, no AI** (Python 3.10 or later, nothing else to install) | `pip install dairy-data-tools`, then `dairy-data-tools pen --folder "Farm Exports" --pen 21`; `dairy-data-tools --help` lists every question |
 
 ## What's in it
 
@@ -51,7 +64,7 @@ Ask in plain words; the right skill picks itself. No commands to learn.
 | --- | --- | --- |
 | dairycomp-exports | "How do I get my cow list out of DairyComp?" "Write me a list of fresh cows in pen 1." "Which of these items shouldn't I use?" | The reports to save for this farm; DairyComp commands from plain English, checked against the farm's own items (SHOW, never LIST, which prints); what each item is |
 | ezfeed-exports | "Which EZfeed reports do you need?" | The reports to save and how they're read |
-| herd-explorer | "How is pen 21 doing?" "What happened to cow 1100?" | The herd, every pen, one pen, one cow: milk and ECM as a spread, events, lactations |
+| herd-explorer | "How is pen 21 doing?" "What happened to cow 3004?" | The herd, every pen, one pen, one cow: milk and ECM as a spread, events, lactations |
 | pen-feed | "What's pen 21's feed efficiency and IOFC?" "Is the feed loaded as called for?" | Each pen's cows joined to its feed: intake per cow, ECM per lb DM, cost per cwt, IOFC, NASEM's predicted intake; loading accuracy, refusals, consistency |
 | weekly-review | "Get me ready for Thursday's visit." "How are the fresh cows doing?" | Fresh cows, components and MUN, udder health, reproduction, who left, the pens' feed, and actions for the next visit |
 | ration-change | "Did pen 21's ration change work, or is it the season?" | The week before against the latest week, with the same weeks last year or another pen taken out |
