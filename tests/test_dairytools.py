@@ -269,7 +269,7 @@ def test_snapshots_join_into_daily_pen_milk_and_each_cows_history(tmp_path):
 def test_the_sample_herds_monthly_test_snapshots_give_a_cow_her_tests():
     herd = load(ROOT / "plugins" / "dairy-data-tools" / "sample-herd")
     tests = [p for p in herd.milk_history.get("3004", []) if p["kind"] == "test"]
-    assert len(tests) == 3 and len({p["day"] for p in tests}) == 3
+    assert len(tests) >= 6 and len({p["day"] for p in tests}) == len(tests)   # tests from early in her lactation on
 
 
 # --- what a ration holds ---------------------------------------------------------------------------------------------

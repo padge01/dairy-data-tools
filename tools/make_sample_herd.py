@@ -260,8 +260,9 @@ def main():
     tests = scale_milk(read_rows(LAB / "test day summary.csv"), keys, factor)
     write_rows(OUT / "tests_2026-10-28.csv", tests)
     # The two monthly snapshots before it, as a farm saving the report each month would have: each cow's test then.
-    for months, name in ((1, "tests_2026-09-28.csv"), (2, "tests_2026-08-28.csv")):
-        write_rows(OUT / name, earlier_tests(tests, months, random.Random(400 + months)))
+    for months in range(1, 11):   # ten months back: a whole lactation of tests for every cow
+        when = date(2026 - (months > 9), (10 - months - 1) % 12 + 1, 28)
+        write_rows(OUT / f"tests_{when:%Y-%m-%d}.csv", earlier_tests(tests, months, random.Random(400 + months)))
     shutil.copyfile(LAB / "item list.csv", OUT / "items.csv")
     for name in ("FeederLoad Summary.csv", "Pen Summary (Dry Cows).csv", "Refusal Summary.csv"):
         shutil.copyfile(LAB / name, OUT / name)
@@ -330,7 +331,7 @@ herd simulator, with a ration-change story laid over it by `tools/make_sample_he
 | File | What it is | From |
 | --- | --- | --- |
 | `cows_2026-10-28.csv`, `tests_2026-10-28.csv` | Every animal on 28 Oct 2026 (in the herd, sold and dead), and each cow's tests | DairyComp SHOW reports, saved as CSV |
-| `tests_2026-09-28.csv`, `tests_2026-08-28.csv` | The same test report saved a month and two months earlier: together, each cow's tests over her lactation | DairyComp SHOW reports, saved monthly |
+| `tests_2025-12-28.csv` ... `tests_2026-09-28.csv` | The same test report saved each month for ten months: together, each cow's tests over her lactation | DairyComp SHOW reports, saved monthly |
 | `events_*.csv` | Three years of events, one file a year | DairyComp EVENTS |
 | `items.csv` | The farm's item list | DairyComp ALTER{BS}2 export |
 | `intake_2026-08-15_2026-10-28.csv`, `intake_2025-08-15_2025-10-31.csv` | Each pen's daily feed, this fall and last | EZfeed Ingredient Intake Tgt vs Act by Pen |

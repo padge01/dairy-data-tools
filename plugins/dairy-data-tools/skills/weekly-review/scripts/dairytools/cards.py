@@ -568,11 +568,11 @@ def pen_card_html(herd: Herd, pen, pen_milk: dict | None = None, days: int = 75,
         if recipe:
             side.append(f"<h2>Ration, last 7 days</h2><div class='sub'>lb of dry matter per cow, called for</div>"
                         f"<div class='rbars'>{ration_bars(recipe)}</div>")
-    # Feed and health go under the charts, so both columns end together; a slide leaves them out.
+    # Feed goes under the charts; a slide leaves it out.
     below = []
-    if pc["health"] and not slide:
-        below.append(f"<h2>Health, last {pc['days']} days</h2><div class='sub'>Cows in the pen now with each "
-                     f"event</div>{health_rows(pc['health'], len(cows))}")
+    if pc["health"] and not slide:   # under the ration, so the two columns end together
+        side.append(f"<h2>Health, last {pc['days']} days</h2><div class='sub'>Cows in the pen now with each "
+                    f"event</div>{health_rows(pc['health'], len(cows))}")
     if feed and feed.get("dmi_lb_per_cow") and not slide:
         eff_key = "ecm_per_lb_dm" if feed.get("ecm_per_lb_dm") else "milk_per_lb_dm"
         efficiency = format(feed[eff_key], ".2f") if feed.get(eff_key) else "n/a"
