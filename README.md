@@ -14,7 +14,7 @@
 
 [Quick start](#quick-start) · [What you get](#what-you-get) · [Other apps](#other-apps) · [What's in it](#whats-in-it) · [Your files](#what-it-does-with-your-files)
 
-Free, for dairy vets, nutritionists and consultants. By Pádraig Lucey, MVB, MPVM, Ph.D., DACVPM-FP
+Free, for dairy vets, nutritionists and consultants. By Pádraig Lucey, MVB, MPVM, Ph.D., DACVPM-Epi
 ([Dairy Data Science](https://dairydatascience.com)).
 
 </div>
