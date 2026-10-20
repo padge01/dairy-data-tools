@@ -60,6 +60,9 @@ svg text{font-family:var(--sans);fill:var(--text2)}svg .lab{fill:var(--text)}
 .rations{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:12px 30px}
 .rations h3{font-size:16px;margin:0 0 2px;font-weight:650}
 body.slide .card,body.slide .page{zoom:1.5;max-width:1060px;margin:14px auto}
+.grp{break-inside:avoid}.slide .body{grid-template-columns:1fr 1.15fr}.slide .rbars{columns:2;column-gap:26px}
+.slide .rbars .grp:first-child .rg{margin-top:0}
+.slide .rbars .rb{grid-template-columns:minmax(0,9.4em) minmax(40px,1fr) auto;gap:8px}
 @media (max-width:1060px){.body{grid-template-columns:1fr}}
 @media (max-width:820px){.tiles{grid-template-columns:repeat(2,1fr)}.head h1{font-size:34px}
 .card{margin:8px;padding:16px}.figs .v{font-size:24px}}
@@ -250,7 +253,7 @@ def ration_bars(after: dict, before: dict | None = None, only_moved: bool = Fals
         ks = sorted(groups.get((words, colour), []), key=lambda k: -max(after.get(k, 0.0), before.get(k, 0.0)))
         if not ks:
             continue
-        out.append(f"<div class='rg'>{esc(words)}</div>")
+        out.append(f"<div class='grp'><div class='rg'>{esc(words)}</div>")
         for k in ks:
             a, b = before.get(k, 0.0), after.get(k, 0.0)
             changed = bool(before) and k in moved
@@ -265,6 +268,7 @@ def ration_bars(after: dict, before: dict | None = None, only_moved: bool = Fals
                          f"<small>{a:.1f} →</small> {b:.1f}" if changed else f"{b:.1f}")
             out.append(f"<div class='rb'><span class='nm' title='{esc(k)}'>{esc(k)}</span><div class='tr'>{bar}</div>"
                        f"<span class='lb'>{label} <small>lb</small></span></div>")
+        out.append("</div>")
     if only_moved and len(feeds) > len(show):
         n = len(feeds) - len(show)
         out.append(f"<div class='sub'>{n} other feed{'s' if n != 1 else ''} unchanged</div>")
@@ -388,18 +392,14 @@ def pen_card_html(herd: Herd, pen, pen_milk: dict | None = None, days: int = 75,
     # A slide draws the chart narrower, so its words come out bigger.
     chart = (time_chart(rows, change, start, end, width=560 if slide else 760) if rows
              else "<p>No daily records for this pen.</p>")
-    # Side: the ration as bars (what changed marked), and the season beside it.
+    # Side: the current ration as bars, and the season beside the last change.
     side = []
     ecm_since = ""
-    if changes:
-        d, _, wa, wb = changes[-1]
-        side.append(f"<h2>Ration change, {_fmt_date(d)}</h2><div class='sub'>lb of dry matter per cow, called for: the "
-                    f"week after; a tick marks the week before</div>{ration_bars(wb, wa, only_moved=slide)}")
-    elif feed:
+    if feed:   # the pen's current ration; the chart marks when it last changed
         recipe = _recipe(herd, feed["ezfeed_pen"], end - timedelta(days=6), end)
         if recipe:
             side.append(f"<h2>Ration, last 7 days</h2><div class='sub'>lb of dry matter per cow, called for</div>"
-                        f"{ration_bars(recipe)}")
+                        f"<div class='rbars'>{ration_bars(recipe)}</div>")
     if pen_milk and change:
         def wk(year_shift, a, b):
             vals = []
