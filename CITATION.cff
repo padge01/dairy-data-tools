@@ -11,7 +11,7 @@ authors:
   - family-names: Lucey
     given-names: Pádraig
     orcid: "https://orcid.org/0000-0003-3885-2439"
-version: 0.2.2
+version: 0.2.3
 doi: 10.5281/zenodo.23493936
 date-released: 2026-10-20
 license: Apache-2.0

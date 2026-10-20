@@ -50,7 +50,8 @@ the farm's own item list.
 
 ## What you get
 
-Each answer comes back as a card. These are from the sample herd.
+Each answer comes back as a card. These are from the sample herd. A six-page overview to share:
+[dairy-data-tools-overview.pdf](https://github.com/padge01/dairy-data-tools/blob/main/docs/dairy-data-tools-overview.pdf).
 
 <table>
 <tr>
@@ -90,13 +91,11 @@ Ask in plain words; the right skill picks itself. No commands to learn.
 | pen-feed | "What's pen 21's feed efficiency and IOFC?" "Is the feed loaded as called for?" | Each pen's cows joined to its feed: intake per cow, ECM per lb DM, cost per cwt, IOFC, NASEM's predicted intake; loading accuracy, refusals, consistency |
 | weekly-review | "Get me ready for Thursday's visit." "How are the fresh cows doing?" | Fresh cows, components and MUN, udder health, reproduction, who left, the pens' feed, and actions for the next visit |
 | ration-change | "Did pen 21's ration change work?" | The weeks before against the weeks after, with the same weeks last year or another pen taken out |
-| balance-ration | "Balance pen 21's ration" | The free Dairy Ration Lab when it's connected; this kit never makes up a ration |
 
 **A sample herd** (`sample-herd/`): a made-up California dairy's exports, to try every skill before using a real farm's.
 
-**Its neighbours**, separate tools from the same place: **BESTPRED** (USDA's best prediction of 305-day and
-mature-equivalent milk; in this marketplace, and at `https://bestpred.dairydatascience.com/mcp`) and the **Dairy Ration
-Lab** (a free ration balancer).
+**Also from Dairy Data Science:** **BESTPRED**, USDA's best prediction of 305-day and mature-equivalent milk, in this
+marketplace and at `https://bestpred.dairydatascience.com/mcp`.
 
 ## What it does with your files
 

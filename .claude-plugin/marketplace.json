@@ -11,7 +11,6 @@
       "source": "./plugins/dairy-data-tools",
       "description": "Read a farm's DairyComp and EZfeed exports: DairyComp commands and exports, the herd explorer, pen cows to pen feed, a weekly review, ration change with the season check",
       "skills": [
-        "./skills/balance-ration",
         "./skills/dairycomp-exports",
         "./skills/ezfeed-exports",
         "./skills/herd-explorer",
