@@ -2,7 +2,7 @@
 write the repository's README from the plugin's.
 
 - tools/dairy.py and tools/dairytools/ go into every skill that runs them (DAIRY_SKILLS).
-- tools/dairyread.py goes into ration-change, whose scripts still use it.
+- tools/dairyread.py, ration_change.py and pen_milk.py go into ration-change.
 """
 
 import shutil
@@ -24,16 +24,18 @@ for name in DAIRY_SKILLS:
     print("copied dairy.py and dairytools to", scripts.relative_to(ROOT))
 for name in DAIRYREAD_SKILLS:
     scripts = PLUGIN / "skills" / name / "scripts"
-    shutil.copyfile(ROOT / "tools" / "dairyread.py", scripts / "dairyread.py")
-    print("copied dairyread.py to", scripts.relative_to(ROOT))
+    for script in ("dairyread.py", "ration_change.py", "pen_milk.py"):
+        shutil.copyfile(ROOT / "tools" / script, scripts / script)
+    print("copied dairyread.py, ration_change.py and pen_milk.py to", scripts.relative_to(ROOT))
 
 # The repository's README is the plugin's, plus how the repository is laid out.
 DEVELOPERS = """
 ## Working on it
 
 - `plugins/dairy-data-tools/`: the plugin people install (skills, sample herd, README, licences).
-- `tools/dairy.py` and `tools/dairytools/`: the one copy of the code; `python tools/sync_scripts.py` copies it into
-  each skill and writes this README.
+- `tools/dairy.py`, `tools/dairytools/` and the ration-change scripts in `tools/`: the one copy of the code;
+  `python tools/sync_scripts.py` copies it into each skill and writes this README. `pyproject.toml` builds the same
+  code as the `dairy-data-tools` package on PyPI.
 - `tools/make_sample_herd.py`: writes the sample herd (fixed seeds, same files every run).
 - `tests/`: `python -m pytest -q tests` (made-up files with known answers, the sample herd, the directory's file limits).
 """

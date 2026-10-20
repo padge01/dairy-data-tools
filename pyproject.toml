@@ -1,0 +1,41 @@
+[project]
+name = "dairy-data-tools"
+version = "0.2.0"
+description = "Read a dairy farm's DairyComp and EZfeed exports: the herd, each pen and cow, pen cows joined to pen feed, a weekly or visit review, and a ration change with the season taken out."
+readme = "README.md"
+license = "Apache-2.0"
+license-files = ["LICENSE", "NOTICE", "LICENSE-skills.md"]
+requires-python = ">=3.10"
+dependencies = []
+authors = [{ name = "Pádraig Lucey" }]
+keywords = ["dairy", "DairyComp", "EZfeed", "herd management", "nutrition", "feed efficiency", "ECM", "IOFC", "veterinary"]
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "Topic :: Scientific/Engineering",
+    "Intended Audience :: Science/Research",
+    "Operating System :: OS Independent",
+]
+
+[project.scripts]
+dairy-data-tools = "dairytools.cli:main"
+dairy-ration-change = "dairytools.ration_change:main"
+dairy-pen-milk = "dairytools.pen_milk:main"
+
+[project.urls]
+Homepage = "https://github.com/padge01/dairy-data-tools"
+Issues = "https://github.com/padge01/dairy-data-tools/issues"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["tools/dairytools"]
+
+[tool.hatch.build.targets.wheel.force-include]
+"tools/dairyread.py" = "dairytools/dairyread.py"
+"tools/ration_change.py" = "dairytools/ration_change.py"
+"tools/pen_milk.py" = "dairytools/pen_milk.py"
+
+[tool.hatch.build.targets.sdist]
+include = ["tools/dairytools", "tools/dairyread.py", "tools/ration_change.py", "tools/pen_milk.py", "README.md", "LICENSE", "NOTICE", "LICENSE-skills.md", "pyproject.toml", "CITATION.cff"]

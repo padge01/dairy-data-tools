@@ -27,6 +27,18 @@ claude plugin install dairy-data-tools@dairy-data-tools
 npx skills add padge01/dairy-data-tools
 ```
 
+**In Python, without an agent** (Python 3.10 or later; nothing else to install):
+
+```bash
+pip install dairy-data-tools
+```
+
+```bash
+dairy-data-tools pen --folder "Farm Exports" --pen 21
+```
+
+Every question has a command: `dairy-data-tools --help` lists them. The ration change is `dairy-ration-change`.
+
 ## What's in it
 
 Ask in plain words; the right skill picks itself. No commands to learn.
@@ -70,6 +82,10 @@ Lab** (a free ration balancer).
   fed.
 - DairyComp 305 and EZfeed are Valley Ag Software's products; this project isn't affiliated with them.
 
+## Cite it
+
+If it helps your work, please cite it: GitHub's "Cite this repository" button gives the reference (`CITATION.cff`).
+
 ## Licence
 
 Code under Apache-2.0 (`LICENSE`); the skills' text under CC BY 4.0 (`LICENSE-skills.md`). Questions and fixes:
@@ -78,7 +94,8 @@ Code under Apache-2.0 (`LICENSE`); the skills' text under CC BY 4.0 (`LICENSE-sk
 ## Working on it
 
 - `plugins/dairy-data-tools/`: the plugin people install (skills, sample herd, README, licences).
-- `tools/dairy.py` and `tools/dairytools/`: the one copy of the code; `python tools/sync_scripts.py` copies it into
-  each skill and writes this README.
+- `tools/dairy.py`, `tools/dairytools/` and the ration-change scripts in `tools/`: the one copy of the code;
+  `python tools/sync_scripts.py` copies it into each skill and writes this README. `pyproject.toml` builds the same
+  code as the `dairy-data-tools` package on PyPI.
 - `tools/make_sample_herd.py`: writes the sample herd (fixed seeds, same files every run).
 - `tests/`: `python -m pytest -q tests` (made-up files with known answers, the sample herd, the directory's file limits).

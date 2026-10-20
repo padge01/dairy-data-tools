@@ -21,8 +21,11 @@ from datetime import date
 from pathlib import Path
 
 sys.dont_write_bytecode = True   # leave nothing behind in the skill folder
-sys.path.insert(0, str(Path(__file__).resolve().parent))
-from dairyread import mean, number, read_cow_list  # noqa: E402
+try:   # inside the installed package
+    from .dairyread import mean, number, read_cow_list
+except ImportError:   # run as a script from the skill's folder
+    sys.path.insert(0, str(Path(__file__).resolve().parent))
+    from dairyread import mean, number, read_cow_list  # noqa: E402
 
 PATTERNS = (
     (re.compile(r"(20\d\d)-(\d\d)-(\d\d)"), (1, 2, 3)),

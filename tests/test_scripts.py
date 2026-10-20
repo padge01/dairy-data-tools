@@ -172,7 +172,7 @@ def test_says_so_when_the_season_cannot_be_checked(farm):
 # --- the copies in each skill are the same file ----------------------------------------------------------------------
 
 def test_every_skill_has_the_current_code():
-    sources = {"dairyread.py": ROOT / "tools" / "dairyread.py", "dairy.py": ROOT / "tools" / "dairy.py"}
+    sources = {n: ROOT / "tools" / n for n in ("dairyread.py", "dairy.py", "ration_change.py", "pen_milk.py")}
     sources.update({f"dairytools/{p.name}": p for p in (ROOT / "tools" / "dairytools").glob("*.py")})
     found = 0
     for scripts in (PLUGIN / "skills").glob("*/scripts"):

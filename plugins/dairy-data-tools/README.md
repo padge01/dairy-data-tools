@@ -27,6 +27,18 @@ claude plugin install dairy-data-tools@dairy-data-tools
 npx skills add padge01/dairy-data-tools
 ```
 
+**In Python, without an agent** (Python 3.10 or later; nothing else to install):
+
+```bash
+pip install dairy-data-tools
+```
+
+```bash
+dairy-data-tools pen --folder "Farm Exports" --pen 21
+```
+
+Every question has a command: `dairy-data-tools --help` lists them. The ration change is `dairy-ration-change`.
+
 ## What's in it
 
 Ask in plain words; the right skill picks itself. No commands to learn.
@@ -69,6 +81,10 @@ Lab** (a free ration balancer).
 - It's a teaching and planning tool, not veterinary or nutrition advice: check anything before it changes what cows are
   fed.
 - DairyComp 305 and EZfeed are Valley Ag Software's products; this project isn't affiliated with them.
+
+## Cite it
+
+If it helps your work, please cite it: GitHub's "Cite this repository" button gives the reference (`CITATION.cff`).
 
 ## Licence
 

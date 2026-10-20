@@ -6,7 +6,8 @@ The skills' text (every SKILL.md) is licensed under Creative Commons Attribution
 The sample herd is made up; no real farm's records are in this repository.
 
 Much of the code is ported to Python from the Rossow Data Lab's R package (vmtrc), the author's teaching tools for
-Heidi Rossow's lab at UC Davis, and is released here under the Apache License 2.0. The sample herd comes from that
+Heidi Rossow's lab at UC Davis. Pádraig Lucey and agAI Inc., who own the Rossow Data Lab, release that ported code
+here under the Apache License 2.0. The sample herd comes from that
 package's herd simulator. UC Davis has not reviewed or endorsed this project.
 
 Figures and their sources:

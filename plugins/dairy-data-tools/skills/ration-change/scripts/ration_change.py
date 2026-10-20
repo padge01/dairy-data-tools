@@ -31,8 +31,11 @@ from datetime import date, timedelta
 from pathlib import Path
 
 sys.dont_write_bytecode = True   # leave nothing behind in the skill folder
-sys.path.insert(0, str(Path(__file__).resolve().parent))
-from dairyread import day, ecm_lb, mean, number, read_intakes, read_text  # noqa: E402
+try:   # inside the installed package
+    from .dairyread import day, ecm_lb, mean, number, read_intakes, read_text
+except ImportError:   # run as a script from the skill's folder
+    sys.path.insert(0, str(Path(__file__).resolve().parent))
+    from dairyread import day, ecm_lb, mean, number, read_intakes, read_text  # noqa: E402
 
 SHARE_POINTS = 0.5  # a feed's share of the DM must move this many points to count as a recipe change
 CALL_LB = 0.5       # the pen's total call must move this many lb to count as a call change
