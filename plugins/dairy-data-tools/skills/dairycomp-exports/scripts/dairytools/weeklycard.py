@@ -89,7 +89,7 @@ def pen_feed_html(herd: Herd, milk_price: float | None = None, days: int = 7, sl
     """Each pen's feed against its milk, each pen's ration as bars, loading. slide: for a projector, bigger and
     with fewer items (each pen's three figures and its ration)."""
     pf = feeding.pen_feed(herd, days=days, milk_price=milk_price)
-    pens = [p for p in pf["pens"] if p.get("tested")]
+    pens = [p for p in pf["pens"] if p.get("dmi_lb_per_cow") is not None]   # every pen fed, tested or not
     span = ""
     if pens:
         a, _, b = pens[0]["days"].partition(" to ")
@@ -99,19 +99,26 @@ def pen_feed_html(herd: Herd, milk_price: float | None = None, days: int = 7, sl
     for p in pens:
         dmi, before = p.get("dmi_lb_per_cow"), p.get("dmi_before")
         moved = f"{dmi - before:+.1f} lb on the week before" if dmi is not None and before is not None else ""
-        facts = [f"ECM <b>{esc(_num(p.get('ecm_mean_lb')))} lb</b> per cow, last test",
+        facts = [f"ECM <b>{esc(_num(p.get('ecm_mean_lb')))} lb</b> per cow, last test" if p.get("ecm_mean_lb") else
+                 f"Milk <b>{esc(_num(p.get('milk_mean_lb')))} lb</b> per cow, {esc(p.get('milk_from', 'last test'))}",
                  f"Feed <b>{esc(_money(p.get('feed_cost_per_cow')))}</b> per cow a day"]
         if "iofc_per_cow" in p:
             facts.append(f"IOFC <b>{esc(_money(p['iofc_per_cow']))}</b> per cow at ${milk_price:.2f} milk")
         if p.get("nasem_predicted_dmi"):
             facts.append(f"NASEM predicts <b>{esc(_num(p['nasem_predicted_dmi']))} lb</b> DM for these cows")
+        efficiency = (tile("ECM per lb DM", _num(p.get("ecm_per_lb_dm"), 2))
+                      if p.get("ecm_per_lb_dm") or not p.get("milk_per_lb_dm")
+                      else tile("Milk per lb DM", _num(p.get("milk_per_lb_dm"), 2)))
+        weighed = f"{p['tested']} tested" if p.get("milk_from", "last test") == "last test" else f"{p['tested']} weighed"
         blocks.append(
-            f"<div class='pen'><div class='who'>Pen {esc(p['pen'])}<small>{p['cows']} cows · {p['tested']} tested</small>"
-            f"</div><div class='trow'>{tile('ECM per lb DM', _num(p.get('ecm_per_lb_dm'), 2))}"
+            f"<div class='pen'><div class='who'>Pen {esc(p['pen'])}<small>{p['cows']} cows · {weighed}</small>"
+            f"</div><div class='trow'>{efficiency}"
             f"{tile('DM fed per cow', _num(dmi), ' lb', moved)}"
             f"{tile('Feed cost per cwt', _money(p.get('feed_cost_per_cwt')))}</div>"
             + ("" if slide else f"<div class='facts'>{'<br>'.join(facts)}</div>") + "</div>")
-    eff = hbars([(f"Pen {p['pen']}", p.get("ecm_per_lb_dm"), "") for p in pens], fmt="{:.2f}")
+    ecm_eff = any(p.get("ecm_per_lb_dm") for p in pens)
+    eff = hbars([(f"Pen {p['pen']}", p.get("ecm_per_lb_dm" if ecm_eff else "milk_per_lb_dm"), "") for p in pens],
+                fmt="{:.2f}")
     cwt = hbars([(f"Pen {p['pen']}", p.get("feed_cost_per_cwt"), "") for p in pens], fmt="${:.2f}")
     loading = "<p class='muted'>No Ingredient Intake report in the folder.</p>"
     try:
@@ -139,8 +146,9 @@ def pen_feed_html(herd: Herd, milk_price: float | None = None, days: int = 7, sl
             figs = ""
             if slide:   # each pen's three figures over its ration, one column a pen
                 figs = (f"<div class='sub'>{p['cows']} cows</div><div class='trow'>"
-                        f"{tile('ECM per lb DM', _num(p.get('ecm_per_lb_dm'), 2))}"
-                        f"{tile('DM fed', _num(p.get('dmi_lb_per_cow')), ' lb')}"
+                        + (tile('ECM per lb DM', _num(p.get('ecm_per_lb_dm'), 2)) if p.get('ecm_per_lb_dm')
+                           or not p.get('milk_per_lb_dm') else tile('Milk per lb DM', _num(p.get('milk_per_lb_dm'), 2)))
+                        + f"{tile('DM fed', _num(p.get('dmi_lb_per_cow')), ' lb')}"
                         f"{tile('Feed per cwt', _money(p.get('feed_cost_per_cwt')))}</div>")
             rations.append(f"<div><h3>Pen {esc(p['pen'])}</h3>{figs}{ration_bars(recipes[p['pen']], top=top)}</div>")
     ration_sec = (f"<div class='sec'><h2>Each pen's ration</h2><p class='note'>lb of dry matter per cow, called for, "
@@ -153,7 +161,7 @@ def pen_feed_html(herd: Herd, milk_price: float | None = None, days: int = 7, sl
                      f"From DairyComp and EZfeed's reports. Records end {end:%b %d, %Y}.", slide=True)
     body = (f"<div class='sec'><h2>Each pen</h2><p class='note'>{esc(span)}. Per cow uses DairyComp's head count.</p>"
             f"{''.join(blocks)}</div>{ration_sec}"
-            f"<div class='sec two'><div><h2>ECM per lb of dry matter</h2><p class='note'>Each pen's own figure; compare "
+            f"<div class='sec two'><div><h2>{'ECM' if ecm_eff else 'Milk'} per lb of dry matter</h2><p class='note'>Each pen's own figure; compare "
             f"it with its own past weeks</p>{eff}</div><div><h2>Feed cost per cwt of milk</h2><p class='note'>Feed cost "
             f"per cow over its milk at the last test</p>{cwt}</div></div>"
             f"<div class='sec'><h2>Loading, fed against called for</h2><p class='note'>Each feed's average miss a day "

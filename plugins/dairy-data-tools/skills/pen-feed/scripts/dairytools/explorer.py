@@ -32,7 +32,7 @@ def repro_split(cows):
     return [{"status": k, "cows": counts[k]} for k in order + sorted(set(counts) - set(order)) if counts[k]]
 
 
-def _test(cows):
+def _test(cows, milk_from="last test"):
     milk = [c.get("test_milk") for c in cows if (c.get("test_milk") or 0) > 0]
     scc = [c.get("test_scc") for c in cows if (c.get("test_scc") or 0) > 0]   # SCC 0 means not tested
     ecm = [ecm_lb(c.get("test_milk"), c.get("test_fat_pct"), c.get("test_protein_pct")) for c in cows
@@ -40,6 +40,7 @@ def _test(cows):
     ecm = [e for e in ecm if e is not None]
     dates = [c["test_date"] for c in cows if c.get("test_date")]
     return {"date": max(dates).isoformat() if dates else None, "of": len(cows), "tested": len(milk),
+            "milk_from": milk_from,
             "milk_lb": p10_50_90(milk), "ecm_lb": p10_50_90(ecm),
             "ecm_mean_lb": sum(ecm) / len(ecm) if ecm else None, "milk_mean_lb": sum(milk) / len(milk) if milk else None,
             "scc_tested": len(scc), "scc_over_200": sum(1 for s in scc if s > 200)}
@@ -60,7 +61,7 @@ def herd_summary(herd: Herd) -> dict:
     return {"as_of": herd.as_of.isoformat(), "milking": n["milking"], "dry": n["dry"], "heifers": n["heifer"],
             "left_last_12_months": left_12,
             "median_dim": median(c["days_in_milk"] for c in milking),
-            "lactation": lact, "repro": repro_split(calved), "test": _test(milking),
+            "lactation": lact, "repro": repro_split(calved), "test": _test(milking, herd.milk_words),
             "holds": {"events_from": herd.events_from.isoformat() if herd.events_from else None,
                       "events": len(herd.events), "unmapped_codes": herd.unmapped_codes,
                       "not_recorded": [v for k, v in TRANSITION.items() if k not in std_events],
@@ -72,7 +73,7 @@ def _pen_row(herd, cows, pen):
     st = Counter(herd.status(c) for c in cows)
     milking = [c for c in cows if herd.status(c) == "milking"]
     kind = max(st, key=st.get) if cows and max(st.values()) > len(cows) / 2 else "mixed"
-    t = _test(milking)
+    t = _test(milking, herd.milk_words)
     return {"pen": pen, "kind": kind, "animals": len(cows), "milking": st["milking"], "dry": st["dry"],
             "heifers": st["heifer"], "median_dim": median(c["days_in_milk"] for c in milking),
             "first_lactation": sum(1 for c in cows if c.get("lactation") == 1),
@@ -107,7 +108,7 @@ def pen_card(herd: Herd, pen, days: int = 30) -> dict:
     health_cows = {k: len({e["animal_id"] for e in recent if e["std_event"] == k}) for k in health}
     groups = Counter("Heifer" if herd.status(c) == "heifer" else _lact_group(c) for c in cows)
     return {"pen": pen, "as_of": herd.as_of.isoformat(), "days": days, "summary": _pen_row(herd, cows, pen),
-            "test": _test(milking),
+            "test": _test(milking, herd.milk_words),
             "lactation": [{"lactation": g, "cows": groups[g]} for g in ("Heifer", "1", "2", "3+") if groups[g]],
             "repro": repro_split([c for c in cows if herd.status(c) != "heifer"]),
             "dim": p10_50_90([c["days_in_milk"] for c in milking]),

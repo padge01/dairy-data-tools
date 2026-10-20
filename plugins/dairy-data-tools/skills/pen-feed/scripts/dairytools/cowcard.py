@@ -98,7 +98,7 @@ def cow_card_html(herd: Herd, cow, gestation: int = 280) -> str:
 
     daily = me.get("daily_milk") or 0
     milk = daily if daily > 0 else me.get("test_milk")
-    milk_what = "lb a day" if daily > 0 else "lb, last test"
+    milk_what = "lb a day" if daily > 0 else f"lb, {herd.milk_words}"
     pen_milk = [c["test_milk"] for c in herd.in_herd() if c["pen"] == me.get("pen") and herd.status(c) == "milking"
                 and (c.get("test_milk") or 0) > 0]
     rank = ""
@@ -107,12 +107,12 @@ def cow_card_html(herd: Herd, cow, gestation: int = 280) -> str:
         top = max(1, round(100 * (above + 1) / len(pen_milk)))
         below = sum(1 for v in pen_milk if v < me["test_milk"])
         place = f"Top {top}%" if top <= 50 else f"Bottom {max(1, round(100 * (below + 1) / len(pen_milk)))}%"
-        rank = f"<b>{place}</b> of pen {esc(me['pen'])} at the last test ({len(pen_milk)} cows)"
+        rank = f"<b>{place}</b> of pen {esc(me['pen'])}, {herd.milk_words} ({len(pen_milk)} cows)"
     spread = ""
     if pen_milk and me.get("test_milk"):
         lo, hi = min(pen_milk), max(pen_milk)
         xm = 400 * (me["test_milk"] - lo) / ((hi - lo) or 1)
-        spread = (f"<div class='cap'>Her milk against pen {esc(me['pen'])}, last test (lb)</div>"
+        spread = (f"<div class='cap'>Her milk against pen {esc(me['pen'])}, {herd.milk_words} (lb)</div>"
                   f"{violin(pen_milk, 'pen milk', ' lb', width=400, height=40)}"
                   f"<svg viewBox='0 0 400 16' width='100%' height='16' aria-hidden='true'>"
                   f"<polygon points='{xm - 6:.1f},14 {xm + 6:.1f},14 {xm:.1f},3' fill='var(--ink)'/></svg>"

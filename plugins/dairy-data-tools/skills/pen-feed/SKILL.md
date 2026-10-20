@@ -23,6 +23,8 @@ python scripts/dairy.py consistency --folder "Farm Exports" [--days 14]
 
 Ask for the milk price ($ per cwt) before working out IOFC; never assume one. `--json out.json` gives every figure.
 
+Herds that weigh milk at every milking but don't test: the scripts use each cow's latest daily weight (DMLK1) as her milk and say so; ECM, fat, protein and SCC stay blank, and feed efficiency is milk per lb of dry matter.
+
 ## What the figures are
 
 - **Pens**: EZfeed's "Pen 21" is DairyComp's pen 21. EZfeed-only pens (hospital, beef) have no DairyComp pen and are

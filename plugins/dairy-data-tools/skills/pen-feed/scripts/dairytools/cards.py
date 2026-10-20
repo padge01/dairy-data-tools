@@ -51,6 +51,7 @@ background:var(--raised);font-size:13px;font-weight:600;white-space:nowrap}.chip
 .foot{font-size:12.5px;color:var(--text3);border-top:1px solid var(--subtle);margin-top:12px;padding-top:8px}
 svg text{font-family:var(--sans);fill:var(--text2)}svg .lab{fill:var(--text)}
 .body>*,.tiles>*,.figs>*{min-width:0}
+.body.one{grid-template-columns:1fr}.body.one .below{flex-direction:row;flex-wrap:wrap}.body.one .below .side{flex:1 1 320px}
 .rg{font-size:11.5px;letter-spacing:.04em;text-transform:uppercase;color:var(--text3);margin:9px 0 2px}
 .rb{display:grid;grid-template-columns:minmax(0,10.5em) minmax(40px,1fr) auto;gap:10px;align-items:center;font-size:13.5px;padding:2px 0}
 .rb .nm{line-height:1.2}.rb .tr{position:relative;height:13px}
@@ -215,10 +216,10 @@ FEED_TYPES = (   # (type, words in the feed's name); the first match wins, so si
     ("Minerals and additives", "mineral", r"mineral|premix|vitamin|\bsalt\b|buffer|bicarb|limestone|rumensin|"
      r"monensin|yeast|additive|binder|magnesium|mag ox|selenium|\bvit\b|\bmix\b"),
     ("Fats", "fat", r"\bfat\b|tallow|bypass|megalac|\boil\b|calcium salts|energizer"),
-    ("By-products", "byproduct", r"hull|cottonseed|pulp|\bbran\b|middlings|midds|by-?product|screenings|cannery|peel"),
-    ("Proteins", "protein", r"canola|\bsoy|distillers|ddgs|gluten|\bmeal\b|blood|fish|urea|amino|protein"),
+    ("By-products", "byproduct", r"hull|cottonseed|pulp|\bbran\b|middlings|midds|by-?product|screenings|cannery|peel|whey|bakery|candy"),
+    ("Proteins", "protein", r"canola|\bsoy|distillers|\bddgs?\b|gluten|\bmeal\b|blood|fish|urea|amino|protein"),
     ("Grains and energy", "grain", r"corn|maize|barley|wheat|sorghum|milo|\boats?\b|hominy|bakery|molasses|grain|"
-     r"starch|flake"),
+     r"starch|flake|earlage|snaplage|high moisture|\bhmc\b"),
 )
 
 
@@ -354,9 +355,9 @@ def pen_card_html(herd: Herd, pen, pen_milk: dict | None = None, days: int = 75,
                             if r.get("head_count") else r["dm_lb_per_head"])
                            for r in pen_days if r.get("dc_pen") == pen and start <= r["date"] <= end)
     tiles = [
-        ("Milk per cow, last test", f"{t['milk_mean_lb']:.1f} lb" if t["milk_mean_lb"] else "n/a",
+        (f"Milk per cow, {herd.milk_words}", f"{t['milk_mean_lb']:.1f} lb" if t["milk_mean_lb"] else "n/a",
          f"ECM {t['ecm_mean_lb']:.1f} lb" if t["ecm_mean_lb"] else "",
-         violin(milk_vals, "milk at the last test", " lb"),
+         violin(milk_vals, f"milk, {herd.milk_words}", " lb"),
          f"Middle 80%: {quantile(milk_vals, .1):.0f}–{quantile(milk_vals, .9):.0f} lb · {t['tested']} of {t['of']} cows"
          if milk_vals else "No tests"),
         ("Days in milk", f"{quantile(dim_vals, .5):.0f}" if dim_vals else "n/a", "median",
@@ -390,8 +391,7 @@ def pen_card_html(herd: Herd, pen, pen_milk: dict | None = None, days: int = 75,
     if intake_series and not slide:
         rows.append(("Intake, lb of dry matter per cow", "lb", [("fed", "bold", intake_series)]))
     # A slide draws the chart narrower, so its words come out bigger.
-    chart = (time_chart(rows, change, start, end, width=560 if slide else 760) if rows
-             else "<p>No daily records for this pen.</p>")
+    chart = time_chart(rows, change, start, end, width=560 if slide else 760) if rows else ""
     # Side: the current ration as bars, and the season beside the last change.
     side = []
     ecm_since = ""
@@ -432,28 +432,40 @@ def pen_card_html(herd: Herd, pen, pen_milk: dict | None = None, days: int = 75,
         below.append(f"<h2>Health, last {pc['days']} days</h2><div class='chips'>" + "".join(
             chip(h["event"].capitalize(), f"{h['cows']} cow{'s' if h['cows'] != 1 else ''}") for h in pc["health"])
             + "</div><div class='sub'>Cows in the pen now</div>")
-    if feed and feed.get("ecm_per_lb_dm") and not slide:
-        efficiency = format(feed["ecm_per_lb_dm"], ".2f")
+    if feed and feed.get("dmi_lb_per_cow") and not slide:
+        eff_key = "ecm_per_lb_dm" if feed.get("ecm_per_lb_dm") else "milk_per_lb_dm"
+        efficiency = format(feed[eff_key], ".2f") if feed.get(eff_key) else "n/a"
         per_cow = "$" + format(feed["feed_cost_per_cow"], ".2f") if feed.get("feed_cost_per_cow") is not None else "n/a"
         per_cwt = "$" + format(feed["feed_cost_per_cwt"], ".2f") if feed.get("feed_cost_per_cwt") else "n/a"
-        figures = (("ECM per lb DM", efficiency), ("Feed per cow", per_cow), ("Feed per cwt", per_cwt))
+        figures = (("ECM per lb DM" if eff_key == "ecm_per_lb_dm" else "Milk per lb DM", efficiency),
+                   ("Feed per cow", per_cow), ("Feed per cwt", per_cwt))
         below.insert(0, "<h2>Feed, last 7 days</h2><div class='figs'>" + "".join(
             f"<div><div class='k'>{esc(k)}</div><div class='v'>{esc(v)}</div></div>" for k, v in figures)
             + "</div><div class='sub'>Delivered feed, per cow in the pen</div>")
     below_html = ("<div class='below'>" + "".join(f"<div class='side'>{b}</div>" for b in below) + "</div>") if below else ""
     kinds = {f["kind"] for f in herd.files}
-    sources = ["DairyComp's cow, test and event reports" if "events" in kinds else "DairyComp's cow report"]
+    cow_words = "cow, test and event reports" if herd.milk_words == "last test" else "cow and event reports"
+    sources = [f"DairyComp's {cow_words}" if "events" in kinds else "DairyComp's cow report"]
     if "feed" in kinds:
         sources.append("EZfeed's intake and pen summary reports")
     if "pen_milk" in kinds:
         sources.append("pen milk by day")
     files = ", ".join(sources)
     kind = {"milking": "Milking cows", "dry": "Dry cows", "heifer": "Heifers"}.get(pc["summary"]["kind"], "Mixed")
+    left_html = chart + below_html
+    side_html = f"<div class='side'>{''.join(side)}</div>" if side else ""
+    if left_html and side_html:
+        body_html = f"<div class='body'><div class='left'>{left_html}</div>{side_html}</div>"
+    elif left_html or side_html:   # one column: what there is, full width
+        body_html = f"<div class='body one'><div class='left'>{left_html or side_html}</div></div>"
+    else:
+        body_html = ""
     return (f"<!doctype html><html lang='en'><head><meta charset='utf-8'><meta name='viewport' "
             f"content='width=device-width,initial-scale=1'><title>Pen {esc(pen)}</title><style>{CSS}</style></head>"
             f"<body{' class=slide' if slide else ''}><div class='card'><div class='head'><h1>Pen {esc(pen)}</h1><span>{len(cows)} cows · {kind} · "
             f"{_fmt_date(start)} to {_fmt_date(end)}</span></div><div class='tiles'>{tile_html}</div>"
-            f"<div class='body'><div class='left'>{chart}{below_html}</div><div class='side'>{''.join(side) or '<p>No changes recorded.</p>'}"
-            f"</div></div><div class='foot'>From {esc(files) if not slide else 'DairyComp and EZfeed'}. Records end {end:%b %d, %Y}. ECM = 0.327 × milk + "
-            f"12.95 × fat lb + 7.65 × protein lb, worked out here. Intake is delivered, per DairyComp head.</div></div>"
+            f"{body_html}<div class='foot'>From {esc(files) if not slide else 'DairyComp and EZfeed'}. Records end {end:%b %d, %Y}. "
+            + ("ECM = 0.327 × milk + 12.95 × fat lb + 7.65 × protein lb, worked out here. " if herd.milk_words == "last test"
+               else "Milk is each cow's latest daily weight: no tests, so no ECM. ")
+            + "Intake is delivered, per DairyComp head.</div></div>"
             f"</body></html>")

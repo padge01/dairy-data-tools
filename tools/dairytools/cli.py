@@ -78,7 +78,7 @@ def text(cmd: str, out) -> str:
         t = out["test"]
         L.append(f"The herd on {out['as_of']}: {out['milking']} milking, {out['dry']} dry, {out['heifers']} heifers; "
                  f"{out['left_last_12_months']} left in the last 12 months. Median days in milk {_r(out['median_dim'], 0)}.")
-        L.append(f"Last test: {t['tested']} of {t['of']} milking cows; milk {_spread(t['milk_lb'])}; "
+        L.append(f"{t.get('milk_from', 'last test').capitalize()}: {t['tested']} of {t['of']} milking cows; milk {_spread(t['milk_lb'])}; "
                  f"ECM {_r(t['ecm_mean_lb'])} lb per cow.")
         if t["scc_tested"]:
             L.append(f"SCC over 200,000: {t['scc_over_200']} of {t['scc_tested']} cows tested.")
@@ -98,7 +98,7 @@ def text(cmd: str, out) -> str:
         s, t = out["summary"], out["test"]
         L.append(f"Pen {out['pen']} on {out['as_of']}: {s['animals']} animals ({s['milking']} milking, {s['dry']} dry, "
                  f"{s['heifers']} heifers); days in milk {_spread(out['dim'], 'days')}.")
-        L.append(f"Last test, {t['tested']} of {t['of']} milking cows: milk {_r(t['milk_mean_lb'])} lb per cow "
+        L.append(f"{t.get('milk_from', 'last test').capitalize()}, {t['tested']} of {t['of']} milking cows: milk {_r(t['milk_mean_lb'])} lb per cow "
                  f"({_spread(t['milk_lb'])}); ECM {_r(t['ecm_mean_lb'])} lb per cow.")
         if out["health"]:
             L.append(f"Health events in the last {out['days']} days, cows in the pen now: "
@@ -114,10 +114,15 @@ def text(cmd: str, out) -> str:
             L.append("Her number was also used by: " + ", ".join(out["number_also_used_by"]))
     elif cmd == "pen-feed":
         for p in out["pens"]:
-            line = (f"Pen {p['pen']} ({p['days']}, {p['cows']} cows): ECM {_r(p['ecm_mean_lb'])} lb, DM fed "
-                    f"{_r(p['dmi_lb_per_cow'])} lb per cow (week before {_r(p['dmi_before'])}), ECM per lb DM "
-                    f"{_r(p['ecm_per_lb_dm'], 2)}, feed ${_r(p['feed_cost_per_cow'], 2)} per cow, "
-                    f"${_r(p['feed_cost_per_cwt'], 2)} per cwt")
+            if p.get("ecm_mean_lb") or not p.get("milk_mean_lb"):
+                milk = f"ECM {_r(p['ecm_mean_lb'])} lb"
+                eff = f"ECM per lb DM {_r(p['ecm_per_lb_dm'], 2)}"
+            else:   # no tests: the latest daily weight, and milk per lb of dry matter
+                milk = f"milk {_r(p['milk_mean_lb'])} lb ({p.get('milk_from', 'last test')})"
+                eff = f"milk per lb DM {_r(p.get('milk_per_lb_dm'), 2)}"
+            line = (f"Pen {p['pen']} ({p['days']}, {p['cows']} cows): {milk}, DM fed "
+                    f"{_r(p['dmi_lb_per_cow'])} lb per cow (week before {_r(p['dmi_before'])}), {eff}, "
+                    f"feed ${_r(p['feed_cost_per_cow'], 2)} per cow, ${_r(p['feed_cost_per_cwt'], 2)} per cwt")
             if "iofc_per_cow" in p:
                 line += f", IOFC ${_r(p['iofc_per_cow'], 2)} per cow"
             if p["nasem_predicted_dmi"]:

@@ -101,9 +101,16 @@ def read_dc_export(path) -> list[dict[str, str | None]]:
     for row in out:
         for n in empty:
             row.pop(n, None)
-    if "" in names and any(row.get("") is not None for row in out):
-        raise ValueError(f"{Path(path).name}: more values than column names. DairyComp prints at most 33 column "
-                         "names; split the items over two reports, each starting ID BDAT.")
+    if "" in names:
+        spilled = [row for row in out if row.get("") is not None]
+        # Many rows past the last name is DairyComp's 33-column limit; a few is a stray comma in a remark.
+        if len(spilled) > max(5, len(out) // 100):
+            raise ValueError(f"{Path(path).name}: more values than column names. DairyComp prints at most 33 column "
+                             "names; split the items over two reports, each starting ID BDAT.")
+        for row in out:
+            extra = row.pop("", None)
+            if extra is not None:
+                row["_spilled"] = extra   # counted and reported by the reader of the herd, never used
     return out
 
 

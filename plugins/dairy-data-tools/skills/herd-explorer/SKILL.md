@@ -27,6 +27,8 @@ python scripts/dairy.py cow   --folder "Farm Exports" --cow 3004
 Add `--json out.json` for every figure (cards are drawn from it). File names don't matter: each file is recognised
 by what's in it. If the cow report or events are missing, the dairycomp-exports skill says how to save them.
 
+Herds that weigh milk at every milking but don't test: the scripts use each cow's latest daily weight (DMLK1) as her milk and say so; ECM, fat, protein and SCC stay blank, and feed efficiency is milk per lb of dry matter.
+
 ## What the figures are
 
 - **The day**: "today" is the herd's last recorded event, not the computer's date. Days in milk are counted to it from

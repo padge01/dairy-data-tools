@@ -40,6 +40,7 @@ class Herd:
     problems: list[str] = field(default_factory=list)
     as_of: date | None = None
     events_from: date | None = None
+    milk_words: str = "last test"   # or "latest daily weight" when the herd has no milk tests
 
     def status(self, cow: dict) -> str:
         """milking, dry, heifer, left or unknown: one rule for every count."""
@@ -157,6 +158,39 @@ def _standardise(rows, table, item_list) -> tuple[list[dict], list[str]]:
     return out, problems
 
 
+def _feed_days(folder, files, made: date) -> list[date]:
+    """The days EZfeed's reports reach, read without the herd (none after the export was made)."""
+    days = []
+    for f in files:
+        if f["kind"] != "feed":
+            continue
+        rep = io.read_ezfeed(f["path"])
+        for r in (rep or {}).get("rows", []):
+            d = r.get("date")
+            if isinstance(d, date) and d <= made:
+                days.append(d)
+    return days
+
+
+def _daily_milk_when_no_tests(herd: Herd, cows: list[dict]) -> None:
+    """Many herds weigh milk at every milking but never test: no fat, protein or test date anywhere. Then each cow's
+    milk is her latest daily weight (DMLK1, or MILK when that's all there is), said so on every card, and ECM, fat and
+    protein stay blank rather than zero."""
+    daily = [c for c in cows if (c.get("daily_milk") or 0) > 0 or (c.get("test_milk") or 0) > 0]
+    tested = [c for c in daily if (c.get("test_fat_pct") or 0) > 0 or c.get("test_date")]
+    if not daily or len(tested) >= len(daily) / 5:   # a stray test or two doesn't make a testing herd
+        return
+    herd.milk_words = "latest daily weight"
+    for c in cows:
+        weight = c.get("daily_milk") if (c.get("daily_milk") or 0) > 0 else c.get("test_milk")
+        c["test_milk"] = weight if (weight or 0) > 0 else None
+        for k in ("test_fat_pct", "test_protein_pct", "test_scc", "test_mun"):
+            if not c.get(k):
+                c[k] = None
+    herd.problems.append("No milk tests in the cow report (no fat, protein or test date): milk is each cow's latest "
+                         "daily weight, and ECM, components and SCC can't be worked out")
+
+
 def animal_id(cow_id, birth: date | None) -> str:
     return f"{cow_id}-{birth:%Y%m%d}" if birth else str(cow_id)
 
@@ -231,8 +265,13 @@ def load(folder, as_of: date | None = None) -> Herd:
 
     raw_cows = _cow_rows(cow_paths) if cow_paths else []
     raw_events = [r for p in event_paths for r in io.read_dc_export(p)]
+    spilled = sum(1 for r in raw_cows + raw_events if r.pop("_spilled", None) is not None)
+    if spilled:
+        herd.problems.append(f"{spilled} rows had a value past the last column name (a comma typed into a remark, "
+                             "usually); that value was left out")
     cows, probs = _standardise(raw_cows, "cows", herd.items)
     herd.problems += [f"cow report: {p}" for p in probs]
+    _daily_milk_when_no_tests(herd, cows)
     events, probs = _standardise(raw_events, "events", herd.items)
     herd.problems += [f"events: {p}" for p in probs]
 
@@ -273,7 +312,11 @@ def load(folder, as_of: date | None = None) -> Herd:
     cow_dates = [d for c in cows for d in (c.get("test_date"), c.get("fresh_date"), c.get("dry_date"))
                  if d and d <= made]
     herd.events_from = min(dates) if dates else None
-    herd.as_of = as_of or max(dates + cow_dates, default=date.today())
+    feed_days = _feed_days(folder, files, made)
+    herd.as_of = as_of or max(dates + cow_dates + feed_days, default=date.today())
+    if dates and (herd.as_of - max(dates)).days > 30:
+        herd.problems.append(f"The events stop on {max(dates)}, {(herd.as_of - max(dates)).days} days before the "
+                             f"other records ({herd.as_of}): the events export may be an old one")
 
     # Exits: the last SOLD or DIED, else the archive date.
     exits = {}

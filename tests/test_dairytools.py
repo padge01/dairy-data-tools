@@ -201,3 +201,53 @@ def test_a_newer_test_moves_the_day_past_the_computers_date(tmp_path):
     herd = load(tmp_path)
     assert herd.as_of == soon
     assert any("dated after the export" in p for p in herd.problems)
+
+
+# --- real farms' exports ---------------------------------------------------------------------------------------------
+
+DAILY = """ID,BDAT,LACT,PEN,DIM,DMLK1,MILK,PCTF,PCTP,SCC,
+    1,01/01/20,       2,       5,  100,    80,    78,    0,    0,    0,
+    2,01/01/21,       1,       5,   50,    90,    88,    0,    0,    0,
+    3,01/01/19,       3,       5,  200,     0,    70,    0,    0,    0,
+"""
+
+
+def test_a_herd_without_tests_uses_daily_weights(tmp_path):
+    write(tmp_path, "cows.csv", DAILY)
+    herd = load(tmp_path)
+    assert herd.milk_words == "latest daily weight"
+    milk = sorted(c["test_milk"] for c in herd.cows)
+    assert milk == [70, 80, 90]                                   # DMLK1, else MILK when the day's weight is 0
+    assert all(c["test_fat_pct"] is None for c in herd.cows)      # blank, never 0 %
+    assert any("No milk tests" in p for p in herd.problems)
+
+
+def test_a_stray_test_doesnt_make_a_testing_herd(tmp_path):
+    rows = ["ID,BDAT,LACT,PEN,DIM,DMLK1,PCTF,PCTP,"] + [f"{i},01/01/20,2,5,100,80,0,0," for i in range(1, 11)]
+    rows[1] = "1,01/01/20,2,5,100,80,3.8,2.9,"            # one cow in ten with a test
+    write(tmp_path, "cows.csv", "\n".join(rows) + "\n")
+    assert load(tmp_path).milk_words == "latest daily weight"
+
+
+def test_a_few_spilled_values_are_set_aside_not_refused(tmp_path):
+    write(tmp_path, "cows.csv", COWS)
+    events = "ID,Event,DIM,Date,Remark,R,T,B,Protocols,Technician,\n" + "".join(
+        f"{i},MAST,20,09/21/26,LF,,,,,Ana,\n" for i in range(100, 160)) + "7,MAST,20,09/21/26,LF,,,,,Ana,Alberto\n"
+    write(tmp_path, "events.csv", events)
+    herd = load(tmp_path)
+    assert any("past the last column name" in p for p in herd.problems)
+
+
+def test_pens_that_arent_the_same_group_get_no_efficiency(tmp_path):
+    write(tmp_path, "cows.csv", COWS)
+    write(tmp_path, "events.csv", EVENTS)
+    write(tmp_path, "pen summary.csv", PEN_SUMMARY.replace(",0,0,0,0,3,100%", ",0,0,0,0,40,100%"))
+    p = feeding.pen_feed(load(tmp_path), days=7, milk_price=20.0)["pens"][0]
+    assert p.get("pens_differ") and p["ecm_per_lb_dm"] is None and p["feed_cost_per_cwt"] is None
+    assert abs(p["dmi_lb_per_cow"] - 60.0) < 1e-9                  # per EZfeed head, not 40 heads over 2 cows
+    assert "iofc_per_cow" not in p or p["iofc_per_cow"] is None
+
+
+def test_pushout_and_water_arent_feeds():
+    assert feeding.NOT_FEED.match("Lactation Pushout") and feeding.NOT_FEED.match("Water")
+    assert not feeding.NOT_FEED.match("Corn silage")

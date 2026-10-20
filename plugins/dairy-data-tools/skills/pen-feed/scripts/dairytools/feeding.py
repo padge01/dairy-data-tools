@@ -9,6 +9,7 @@ what was delivered, not what was eaten, unless refusals are weighed.
 from __future__ import annotations
 
 import math
+import re
 from collections import defaultdict
 from datetime import timedelta
 
@@ -47,6 +48,9 @@ def _milking_tested(herd: Herd, pen=None):
     return out
 
 
+NOT_FEED = re.compile(r"^\s*(.*\bpush ?out\b.*|water)\s*$", re.I)   # in EZfeed's lists, but not feeds
+
+
 def _pen_feed_days(herd: Herd):
     """Each EZfeed pen's days: DM and cost per head and EZfeed's head count, from the Pen Summary when the farm sent
     it, else the ingredient intake report summed over its feeds (premix lines once)."""
@@ -57,7 +61,7 @@ def _pen_feed_days(herd: Herd):
     days = defaultdict(lambda: {"dm_lb_per_head": 0.0, "cost_per_head": 0.0, "target_dm": 0.0})
     meta = {}
     for r in herd.feed.get("feed_delivery", []):
-        if r.get("premix"):
+        if r.get("premix") or NOT_FEED.match(r["ingredient"] or ""):
             continue
         k = (r["pen"], r["date"])
         meta[k] = r.get("dc_pen")
@@ -123,6 +127,8 @@ def pen_feed(herd: Herd, days: int = 7, milk_price: float | None = None, pen=Non
                "dmi_lb_per_cow": dmi, "dmi_before": dmi_b,
                "feed_cost_per_cow": cost, "feed_cost_before": cost_b,
                "ecm_per_lb_dm": mean_ecm / dmi if mean_ecm and dmi else None,
+               "milk_per_lb_dm": mean_milk / dmi if mean_milk and dmi else None,
+               "milk_from": herd.milk_words,
                "feed_cost_per_cwt": 100 * cost / mean_milk if cost and mean_milk else None,
                "nasem_predicted_dmi": predicted,
                "fed_vs_predicted_pct": 100 * (dmi - predicted) / predicted if dmi and predicted else None,
@@ -130,7 +136,21 @@ def pen_feed(herd: Herd, days: int = 7, milk_price: float | None = None, pen=Non
         if milk_price is not None and mean_milk and cost is not None:
             row["milk_income_per_cow"] = milk_price * mean_milk / 100
             row["iofc_per_cow"] = row["milk_income_per_cow"] - cost
-        if ez_heads and abs(ez_heads / heads - 1) > 0.05:
+        if ez_heads and abs(ez_heads - heads) > max(10, 0.25 * heads):
+            # Not the same group of cows: EZfeed's pen is fed for one count, DairyComp's pen holds another.
+            if rows[0].get("head_count"):
+                row["dmi_lb_per_cow"] = dmi * heads / ez_heads if dmi is not None else None
+                row["feed_cost_per_cow"] = cost * heads / ez_heads if cost is not None else None
+                row["dmi_before"] = dmi_b * heads / ez_heads if dmi_b is not None else None
+                row["feed_cost_before"] = cost_b * heads / ez_heads if cost_b is not None else None
+            for k in ("ecm_per_lb_dm", "milk_per_lb_dm", "feed_cost_per_cwt", "fed_vs_predicted_pct", "iofc_per_cow",
+                      "milk_income_per_cow"):
+                row[k] = None
+            row["pens_differ"] = True
+            row["notes"].append(f"EZfeed's {rows[0]['pen']} is fed for {round(ez_heads)} head; DairyComp's pen {dc_pen} "
+                                f"has {heads} cows: not the same group. Intake and cost are per EZfeed head; no "
+                                "efficiency, cost per cwt or IOFC until the pens match.")
+        elif ez_heads and abs(ez_heads / heads - 1) > 0.05:
             row["notes"].append(f"EZfeed counts {round(ez_heads)} head; DairyComp has {heads}. Per cow uses "
                                 "DairyComp's count.")
         if rows[0]["source"] == "Ingredient Intake":
@@ -173,7 +193,8 @@ def loading_accuracy(herd: Herd, by: str = "ingredient", days: int | None = None
                          "mean_abs_deviation_pct": dev})
         rows.sort(key=lambda r: -r["mean_abs_deviation_pct"])
         return {"by": "feeder", "rows": rows, "reference_lines": ["1-2% is achievable (Kluth), cited for context."]}
-    d = [r for r in herd.feed.get("feed_delivery", []) if not r.get("premix") and (r.get("target_dm_lb_per_head") or 0) > 0
+    d = [r for r in herd.feed.get("feed_delivery", []) if not r.get("premix") and not NOT_FEED.match(r["ingredient"] or "")
+         and (r.get("target_dm_lb_per_head") or 0) > 0
          and r.get("actual_dm_lb_per_head") is not None]
     if not d:
         raise SystemExit("No Ingredient Intake Tgt vs Act by Pen report in the folder.")
