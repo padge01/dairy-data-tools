@@ -277,6 +277,7 @@ def test_sample_herd_is_current():
 
 def test_repository_readme_is_current():
     readme = (PLUGIN / "README.md").read_text(encoding="utf-8")
+    readme = readme.replace("https://raw.githubusercontent.com/padge01/dairy-data-tools/main/", "")
     assert (ROOT / "README.md").read_text(encoding="utf-8").startswith(readme.rstrip("\n"))
 
 

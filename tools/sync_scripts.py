@@ -40,5 +40,7 @@ DEVELOPERS = """
 - `tests/`: `python -m pytest -q tests` (made-up files with known answers, the sample herd, the directory's file limits).
 """
 readme = (PLUGIN / "README.md").read_text(encoding="utf-8")
+# Pictures by their path in the repository there, so they show on GitHub and in any viewer of the checked-out files.
+readme = readme.replace("https://raw.githubusercontent.com/padge01/dairy-data-tools/main/", "")
 (ROOT / "README.md").write_text(readme.rstrip("\n") + "\n" + DEVELOPERS, encoding="utf-8", newline="\n")
 print("wrote README.md")

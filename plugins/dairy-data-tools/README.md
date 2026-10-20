@@ -12,9 +12,9 @@
 [![DOI](https://img.shields.io/badge/DOI-10.5281%2Fzenodo.23493936-blue?style=flat-square)](https://doi.org/10.5281/zenodo.23493936)
 [![License](https://img.shields.io/badge/license-Apache--2.0-blue?style=flat-square)](LICENSE)
 
-[Quick start](#quick-start) · [Other apps](#other-apps) · [What's in it](#whats-in-it) · [Your files](#what-it-does-with-your-files)
+[Quick start](#quick-start) · [What you get](#what-you-get) · [Other apps](#other-apps) · [What's in it](#whats-in-it) · [Your files](#what-it-does-with-your-files)
 
-Free, for dairy vets, nutritionists and consultants. By Pádraig Lucey, MVB, MPVM, Ph.D.
+Free, for dairy vets, nutritionists and consultants. By Pádraig Lucey, MVB, MPVM, Ph.D., DACVPM-FP
 ([Dairy Data Science](https://dairydatascience.com)).
 
 </div>
@@ -38,12 +38,12 @@ Attach the farm's DairyComp and EZfeed exports (or this kit's [sample herd](http
 ask, for example:
 
 ```text
-How is pen 21 doing? Did the ration change on 28 Sep work, or is it just the season?
+How is pen 21 doing?
 ```
 
 You get the figures, where each came from and what it's out of, and a card like this one:
 
-<p align="center"><img src="https://raw.githubusercontent.com/padge01/dairy-data-tools/main/docs/images/pen-card.png" alt="Pen 21's card from the sample herd: milk and ECM per cow as a spread, days in milk, lactation, intake, ECM and intake by day with the ration change marked, what changed in the ration, ECM since the change against last fall, health events and feed cost." width="760"></p>
+<p align="center"><img src="https://raw.githubusercontent.com/padge01/dairy-data-tools/main/docs/images/pen-card.png" alt="Pen 21's card from the sample herd: milk, days in milk, lactation and intake; ECM by day above intake split into aNDF, starch, CP and fat, with the ration change marked; the ration as bars; feed cost and health." width="760"></p>
 
 No DairyComp export yet? Ask *"What do I type in DairyComp to export what you need?"*. It writes the SHOW commands from
 the farm's own item list.
@@ -68,8 +68,7 @@ Each answer comes back as a card. These are from the sample herd.
 </table>
 
 Herds that test get ECM from their tests. Herds that only weigh milk get each cow's daily weight, and the card says so.
-Save the exports more than once and the cards join them: each day gives a pen's milk by day, each month gives a cow's
-tests.
+Save the exports every day or every month and the cards join them into each pen's and each cow's milk over time.
 
 ## Other apps
 
@@ -90,11 +89,8 @@ Ask in plain words; the right skill picks itself. No commands to learn.
 | herd-explorer | "How is pen 21 doing?" "What happened to cow 3004?" | The herd, every pen, one pen, one cow: milk and ECM as a spread, events, lactations |
 | pen-feed | "What's pen 21's feed efficiency and IOFC?" "Is the feed loaded as called for?" | Each pen's cows joined to its feed: intake per cow, ECM per lb DM, cost per cwt, IOFC, NASEM's predicted intake; loading accuracy, refusals, consistency |
 | weekly-review | "Get me ready for Thursday's visit." "How are the fresh cows doing?" | Fresh cows, components and MUN, udder health, reproduction, who left, the pens' feed, and actions for the next visit |
-| ration-change | "Did pen 21's ration change work, or is it the season?" | The week before against the latest week, with the same weeks last year or another pen taken out |
+| ration-change | "Did pen 21's ration change work?" | The weeks before against the weeks after, with the same weeks last year or another pen taken out |
 | balance-ration | "Balance pen 21's ration" | The free Dairy Ration Lab when it's connected; this kit never makes up a ration |
-
-Plain Python, checked number for number against the author's earlier R version: every count says what it's out of,
-milk is shown as a spread, and the farm is compared with itself, never with published targets.
 
 **A sample herd** (`sample-herd/`): a made-up California dairy's exports, to try every skill before using a real farm's.
 
@@ -115,8 +111,8 @@ Lab** (a free ration balancer).
 
 ## Good to know
 
-- Weights are in pounds. Pens are compared with themselves and with the farm's other pens, never with published
-  targets.
+- Weights are in pounds. Every count says what it's out of, and pens are compared with themselves and with the farm's
+  other pens, never with published targets.
 - It's a teaching and planning tool, not veterinary or nutrition advice: check anything before it changes what cows are
   fed.
 - DairyComp 305 and EZfeed are Valley Ag Software's products; this project isn't affiliated with them.
@@ -124,10 +120,10 @@ Lab** (a free ration balancer).
 ## Cite it
 
 If it helps your work, please cite it: Lucey, P. (2026). *Dairy Data Tools* [software]. Zenodo.
-https://doi.org/10.5281/zenodo.23493936 (every version; 0.2.0 is https://doi.org/10.5281/zenodo.23493937). GitHub's
-"Cite this repository" button gives the same reference.
+https://doi.org/10.5281/zenodo.23493936. GitHub's "Cite this repository" button gives the same reference.
 
 ## Licence
 
-Code under Apache-2.0 (`LICENSE`); the skills' text under CC BY 4.0 (`LICENSE-skills.md`). Questions and fixes:
+Code under Apache-2.0 (`LICENSE`); the skills' text under CC BY 4.0 (`LICENSE-skills.md`). The NASEM (2021) feed values
+keep NASEM's own terms (see `NOTICE`). Questions and fixes:
 [issues](https://github.com/padge01/dairy-data-tools/issues).
