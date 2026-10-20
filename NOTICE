@@ -1,0 +1,9 @@
+Dairy Data Tools
+Copyright 2026 Pádraig Lucey (Dairy Data Science, https://dairydatascience.com)
+
+The code (Python scripts, tools and tests) is licensed under the Apache License, Version 2.0 (LICENSE).
+The skills' text (every SKILL.md) is licensed under Creative Commons Attribution 4.0 International (LICENSE-skills.md).
+The sample herd is made up; no real farm's records are in this repository.
+
+DairyComp 305 and EZfeed are products of Valley Ag Software. This project is not affiliated with or endorsed
+by Valley Ag Software. It reads only export files that the programs write for their users.

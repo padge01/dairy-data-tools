@@ -1,0 +1,683 @@
+{
+  "as_of": "2025-12-31",
+  "status": {
+    "milking": 344,
+    "dry": 46,
+    "heifer": 351,
+    "left": 270,
+    "unknown": 0
+  },
+  "lactations": 1163,
+  "end_reasons": {
+    "died": 30,
+    "dried off": 604,
+    "in milk at export": 344,
+    "sold": 185
+  },
+  "herd": {
+    "median_dim": 156.5,
+    "tested": 344,
+    "p10": 38.4,
+    "p50": 65.85,
+    "p90": 93.4,
+    "scc_tested": 344,
+    "scc_over_200": 65,
+    "lactation": [
+      {
+        "lactation": "1",
+        "milking": 98,
+        "dry": 17
+      },
+      {
+        "lactation": "2",
+        "milking": 93,
+        "dry": 10
+      },
+      {
+        "lactation": "3+",
+        "milking": 153,
+        "dry": 19
+      }
+    ],
+    "repro": [
+      {
+        "status": "Fresh",
+        "cows": 60
+      },
+      {
+        "status": "Open",
+        "cows": 13
+      },
+      {
+        "status": "Bred",
+        "cows": 107
+      },
+      {
+        "status": "Pregnant",
+        "cows": 161
+      },
+      {
+        "status": "Dry",
+        "cows": 46
+      },
+      {
+        "status": "Do not breed",
+        "cows": 3
+      }
+    ]
+  },
+  "pens": [
+    {
+      "pen": "1",
+      "kind": "milking",
+      "cows": 22,
+      "milking": 22,
+      "dry": 0,
+      "heifers": 0,
+      "median_dim": 6.5,
+      "first_lactation": 7,
+      "pregnant": 0,
+      "tested": 22,
+      "median_test_milk": 59.35,
+      "scc_tested": 22,
+      "scc_over_200": 6
+    },
+    {
+      "pen": "11",
+      "kind": "milking",
+      "cows": 91,
+      "milking": 91,
+      "dry": 0,
+      "heifers": 0,
+      "median_dim": 156,
+      "first_lactation": 91,
+      "pregnant": 48,
+      "tested": 91,
+      "median_test_milk": 57.1,
+      "scc_tested": 91,
+      "scc_over_200": 15
+    },
+    {
+      "pen": "21",
+      "kind": "milking",
+      "cows": 228,
+      "milking": 228,
+      "dry": 0,
+      "heifers": 0,
+      "median_dim": 170.5,
+      "first_lactation": 0,
+      "pregnant": 111,
+      "tested": 228,
+      "median_test_milk": 69.6,
+      "scc_tested": 228,
+      "scc_over_200": 44
+    },
+    {
+      "pen": "40",
+      "kind": "dry",
+      "cows": 28,
+      "milking": 0,
+      "dry": 28,
+      "heifers": 0,
+      "median_dim": null,
+      "first_lactation": 11,
+      "pregnant": 0,
+      "tested": 0,
+      "median_test_milk": null,
+      "scc_tested": 0,
+      "scc_over_200": 0
+    },
+    {
+      "pen": "41",
+      "kind": "dry",
+      "cows": 18,
+      "milking": 0,
+      "dry": 18,
+      "heifers": 0,
+      "median_dim": null,
+      "first_lactation": 6,
+      "pregnant": 0,
+      "tested": 0,
+      "median_test_milk": null,
+      "scc_tested": 0,
+      "scc_over_200": 0
+    },
+    {
+      "pen": "50",
+      "kind": "milking",
+      "cows": 3,
+      "milking": 3,
+      "dry": 0,
+      "heifers": 0,
+      "median_dim": 235,
+      "first_lactation": 0,
+      "pregnant": 2,
+      "tested": 3,
+      "median_test_milk": 61.6,
+      "scc_tested": 3,
+      "scc_over_200": 0
+    },
+    {
+      "pen": "60",
+      "kind": "heifer",
+      "cows": 24,
+      "milking": 0,
+      "dry": 0,
+      "heifers": 24,
+      "median_dim": null,
+      "first_lactation": 0,
+      "pregnant": 0,
+      "tested": 0,
+      "median_test_milk": null,
+      "scc_tested": 0,
+      "scc_over_200": 0
+    },
+    {
+      "pen": "61",
+      "kind": "heifer",
+      "cows": 87,
+      "milking": 0,
+      "dry": 0,
+      "heifers": 87,
+      "median_dim": null,
+      "first_lactation": 0,
+      "pregnant": 0,
+      "tested": 0,
+      "median_test_milk": null,
+      "scc_tested": 0,
+      "scc_over_200": 0
+    },
+    {
+      "pen": "62",
+      "kind": "heifer",
+      "cows": 80,
+      "milking": 0,
+      "dry": 0,
+      "heifers": 80,
+      "median_dim": null,
+      "first_lactation": 0,
+      "pregnant": 0,
+      "tested": 0,
+      "median_test_milk": null,
+      "scc_tested": 0,
+      "scc_over_200": 0
+    },
+    {
+      "pen": "63",
+      "kind": "heifer",
+      "cows": 39,
+      "milking": 0,
+      "dry": 0,
+      "heifers": 39,
+      "median_dim": null,
+      "first_lactation": 0,
+      "pregnant": 0,
+      "tested": 0,
+      "median_test_milk": null,
+      "scc_tested": 0,
+      "scc_over_200": 0
+    },
+    {
+      "pen": "64",
+      "kind": "heifer",
+      "cows": 121,
+      "milking": 0,
+      "dry": 0,
+      "heifers": 121,
+      "median_dim": null,
+      "first_lactation": 0,
+      "pregnant": 121,
+      "tested": 0,
+      "median_test_milk": null,
+      "scc_tested": 0,
+      "scc_over_200": 0
+    }
+  ],
+  "pen21": {
+    "milk": {
+      "p10": 42.68,
+      "p50": 69.6,
+      "p90": 96.11
+    },
+    "health": [
+      {
+        "event": "clinical_mastitis",
+        "events": 7,
+        "cows": 7
+      },
+      {
+        "event": "lameness",
+        "events": 3,
+        "cows": 3
+      },
+      {
+        "event": "metritis",
+        "events": 3,
+        "cows": 3
+      },
+      {
+        "event": "retained_placenta",
+        "events": 1,
+        "cows": 1
+      }
+    ]
+  },
+  "incidence": {
+    "clinical_mastitis": [
+      {
+        "group": "1",
+        "lactations": 256,
+        "cases": 10,
+        "risk": 0.039
+      },
+      {
+        "group": "2+",
+        "lactations": 541,
+        "cases": 25,
+        "risk": 0.046
+      }
+    ],
+    "retained_placenta": [
+      {
+        "group": "1",
+        "lactations": 256,
+        "cases": 25,
+        "risk": 0.098
+      },
+      {
+        "group": "2+",
+        "lactations": 541,
+        "cases": 40,
+        "risk": 0.074
+      }
+    ],
+    "displaced_abomasum": [
+      {
+        "group": "1",
+        "lactations": 256,
+        "cases": 7,
+        "risk": 0.027
+      },
+      {
+        "group": "2+",
+        "lactations": 541,
+        "cases": 15,
+        "risk": 0.028
+      }
+    ],
+    "milk_fever": [
+      {
+        "group": "1",
+        "lactations": 256,
+        "cases": 3,
+        "risk": 0.012
+      },
+      {
+        "group": "2+",
+        "lactations": 541,
+        "cases": 27,
+        "risk": 0.05
+      }
+    ],
+    "lameness": [
+      {
+        "group": "1",
+        "lactations": 256,
+        "cases": 0,
+        "risk": 0
+      },
+      {
+        "group": "2+",
+        "lactations": 541,
+        "cases": 0,
+        "risk": 0
+      }
+    ]
+  },
+  "pregnancy_rate": [
+    {
+      "group": "1",
+      "cycles": 30,
+      "eligible": 537,
+      "bred": 409,
+      "pregnant": 160,
+      "service_rate": 0.762,
+      "conception_rate": 0.391,
+      "pregnancy_rate": 0.298
+    },
+    {
+      "group": "2+",
+      "cycles": 30,
+      "eligible": 1337,
+      "bred": 999,
+      "pregnant": 342,
+      "service_rate": 0.747,
+      "conception_rate": 0.342,
+      "pregnancy_rate": 0.256
+    }
+  ],
+  "feed_efficiency": [
+    {
+      "pen": "Pen 1",
+      "dc_pen": 1,
+      "cows": 22,
+      "milk": 61.6,
+      "ecm": 66,
+      "dmi_per_cow": 43.9,
+      "feed_efficiency": 1.5
+    },
+    {
+      "pen": "Pen 11",
+      "dc_pen": 11,
+      "cows": 91,
+      "milk": 56.1,
+      "ecm": 57.9,
+      "dmi_per_cow": 47,
+      "feed_efficiency": 1.23
+    },
+    {
+      "pen": "Pen 21",
+      "dc_pen": 21,
+      "cows": 228,
+      "milk": 69.2,
+      "ecm": 71.8,
+      "dmi_per_cow": 55,
+      "feed_efficiency": 1.31
+    }
+  ],
+  "iofc": [
+    {
+      "pen": "Pen 1",
+      "dc_pen": 1,
+      "cows": 22,
+      "milk": 61.6,
+      "milk_income": 12.94,
+      "feed_cost_per_cow": 6.96,
+      "iofc": 5.98
+    },
+    {
+      "pen": "Pen 11",
+      "dc_pen": 11,
+      "cows": 91,
+      "milk": 56.1,
+      "milk_income": 11.78,
+      "feed_cost_per_cow": 7.11,
+      "iofc": 4.67
+    },
+    {
+      "pen": "Pen 21",
+      "dc_pen": 21,
+      "cows": 228,
+      "milk": 69.2,
+      "milk_income": 14.53,
+      "feed_cost_per_cow": 8.35,
+      "iofc": 6.18
+    }
+  ],
+  "loading_ingredient": [
+    {
+      "ingredient": "Wheat straw",
+      "days": 30,
+      "target": 9,
+      "fed": 9.07,
+      "mean_deviation_pct": 0.8,
+      "sd_deviation_pct": 3.1
+    },
+    {
+      "ingredient": "Almond hulls",
+      "days": 30,
+      "target": 2.37,
+      "fed": 2.36,
+      "mean_deviation_pct": -0.6,
+      "sd_deviation_pct": 3.2
+    },
+    {
+      "ingredient": "Lactation mineral",
+      "days": 30,
+      "target": 1.29,
+      "fed": 1.3,
+      "mean_deviation_pct": 0.6,
+      "sd_deviation_pct": 3
+    },
+    {
+      "ingredient": "Canola meal",
+      "days": 30,
+      "target": 3.88,
+      "fed": 3.89,
+      "mean_deviation_pct": 0.4,
+      "sd_deviation_pct": 2.9
+    },
+    {
+      "ingredient": "Corn grain, steam-flaked",
+      "days": 30,
+      "target": 9.34,
+      "fed": 9.39,
+      "mean_deviation_pct": 0.4,
+      "sd_deviation_pct": 2.8
+    },
+    {
+      "ingredient": "Corn silage",
+      "days": 30,
+      "target": 13.55,
+      "fed": 13.57,
+      "mean_deviation_pct": 0.3,
+      "sd_deviation_pct": 3.2
+    },
+    {
+      "ingredient": "Dry cow mineral",
+      "days": 30,
+      "target": 1.2,
+      "fed": 1.2,
+      "mean_deviation_pct": -0.3,
+      "sd_deviation_pct": 2.8
+    },
+    {
+      "ingredient": "DDGS",
+      "days": 30,
+      "target": 3.24,
+      "fed": 3.23,
+      "mean_deviation_pct": -0.2,
+      "sd_deviation_pct": 2.8
+    },
+    {
+      "ingredient": "Soybean meal",
+      "days": 30,
+      "target": 3,
+      "fed": 3,
+      "mean_deviation_pct": 0.2,
+      "sd_deviation_pct": 2.4
+    },
+    {
+      "ingredient": "Alfalfa hay",
+      "days": 30,
+      "target": 7.44,
+      "fed": 7.45,
+      "mean_deviation_pct": 0.1,
+      "sd_deviation_pct": 3.3
+    },
+    {
+      "ingredient": "Whole cottonseed",
+      "days": 30,
+      "target": 2.31,
+      "fed": 2.31,
+      "mean_deviation_pct": -0,
+      "sd_deviation_pct": 3.5
+    }
+  ],
+  "loading_feeder": [
+    {
+      "feeder": "Feeder 2",
+      "days": 30,
+      "loads": 60,
+      "mean_abs_deviation_pct": 0.89,
+      "sd_deviation_pct": 0.71
+    },
+    {
+      "feeder": "Feeder 1",
+      "days": 30,
+      "loads": 30,
+      "mean_abs_deviation_pct": 0.86,
+      "sd_deviation_pct": 0.63
+    }
+  ],
+  "refusals": [
+    {
+      "pen": "Pen 1",
+      "dc_pen": 1,
+      "life_stage": "milking",
+      "days": 7,
+      "delivered_as_fed_lb": 11585,
+      "refused_as_fed_lb": 456,
+      "refusal_pct": 3.94,
+      "over_4_pct": false,
+      "target": "1-3% (milking)",
+      "verdict": "above"
+    },
+    {
+      "pen": "Pen 11",
+      "dc_pen": 11,
+      "life_stage": "milking",
+      "days": 7,
+      "delivered_as_fed_lb": 51056,
+      "refused_as_fed_lb": 1176,
+      "refusal_pct": 2.3,
+      "over_4_pct": false,
+      "target": "1-3% (milking)",
+      "verdict": "within"
+    },
+    {
+      "pen": "Pen 21",
+      "dc_pen": 21,
+      "life_stage": "milking",
+      "days": 7,
+      "delivered_as_fed_lb": 148431,
+      "refused_as_fed_lb": 3287,
+      "refusal_pct": 2.21,
+      "over_4_pct": false,
+      "target": "1-3% (milking)",
+      "verdict": "within"
+    },
+    {
+      "pen": "Pen 40",
+      "dc_pen": 40,
+      "life_stage": "dry",
+      "days": 7,
+      "delivered_as_fed_lb": 8949,
+      "refused_as_fed_lb": 300,
+      "refusal_pct": 3.35,
+      "over_4_pct": false,
+      "target": "1-4% (most pens)",
+      "verdict": "within"
+    },
+    {
+      "pen": "Pen 41",
+      "dc_pen": 41,
+      "life_stage": "dry",
+      "days": 7,
+      "delivered_as_fed_lb": 5818,
+      "refused_as_fed_lb": 174,
+      "refusal_pct": 2.99,
+      "over_4_pct": false,
+      "target": "1-4% (most pens)",
+      "verdict": "within"
+    },
+    {
+      "pen": "Hospital",
+      "dc_pen": null,
+      "life_stage": "milking",
+      "days": 7,
+      "delivered_as_fed_lb": 3109,
+      "refused_as_fed_lb": 134,
+      "refusal_pct": 4.31,
+      "over_4_pct": true,
+      "target": "1-3% (milking)",
+      "verdict": "above"
+    }
+  ],
+  "consistency": [
+    {
+      "pen": "Pen 1",
+      "dc_pen": 1,
+      "life_stage": "milking",
+      "days": 14,
+      "mean_dm_lb_per_head": 43,
+      "sd_dm_lb_per_head": 0.68,
+      "mean_abs_change_lb": 0.9,
+      "max_abs_change_lb": 1.9,
+      "changes_over_2_lb": 0,
+      "usual_feed_time": "07:42",
+      "feed_time_sd_min": 87.7,
+      "share_within_10_min": 0.143
+    },
+    {
+      "pen": "Pen 11",
+      "dc_pen": 11,
+      "life_stage": "milking",
+      "days": 14,
+      "mean_dm_lb_per_head": 46.2,
+      "sd_dm_lb_per_head": 0.39,
+      "mean_abs_change_lb": 0.38,
+      "max_abs_change_lb": 1.09,
+      "changes_over_2_lb": 0,
+      "usual_feed_time": "07:41",
+      "feed_time_sd_min": 95.8,
+      "share_within_10_min": 0.143
+    },
+    {
+      "pen": "Pen 21",
+      "dc_pen": 21,
+      "life_stage": "milking",
+      "days": 14,
+      "mean_dm_lb_per_head": 54,
+      "sd_dm_lb_per_head": 0.6,
+      "mean_abs_change_lb": 0.77,
+      "max_abs_change_lb": 2.18,
+      "changes_over_2_lb": 1,
+      "usual_feed_time": "07:39",
+      "feed_time_sd_min": 96.1,
+      "share_within_10_min": 0.214
+    },
+    {
+      "pen": "Pen 40",
+      "dc_pen": 40,
+      "life_stage": "dry",
+      "days": 14,
+      "mean_dm_lb_per_head": 26.2,
+      "sd_dm_lb_per_head": 0.49,
+      "mean_abs_change_lb": 0.63,
+      "max_abs_change_lb": 1.67,
+      "changes_over_2_lb": 0,
+      "usual_feed_time": "06:50",
+      "feed_time_sd_min": 67.3,
+      "share_within_10_min": 0.143
+    },
+    {
+      "pen": "Pen 41",
+      "dc_pen": 41,
+      "life_stage": "dry",
+      "days": 14,
+      "mean_dm_lb_per_head": 26.3,
+      "sd_dm_lb_per_head": 0.36,
+      "mean_abs_change_lb": 0.4,
+      "max_abs_change_lb": 1.21,
+      "changes_over_2_lb": 0,
+      "usual_feed_time": "08:12",
+      "feed_time_sd_min": 103.3,
+      "share_within_10_min": 0
+    },
+    {
+      "pen": "Hospital",
+      "dc_pen": null,
+      "life_stage": "milking",
+      "days": 14,
+      "mean_dm_lb_per_head": 43.1,
+      "sd_dm_lb_per_head": 0.54,
+      "mean_abs_change_lb": 0.66,
+      "max_abs_change_lb": 1.42,
+      "changes_over_2_lb": 0,
+      "usual_feed_time": "06:46",
+      "feed_time_sd_min": 71.3,
+      "share_within_10_min": 0.143
+    }
+  ]
+}

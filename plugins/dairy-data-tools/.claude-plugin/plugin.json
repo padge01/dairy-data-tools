@@ -1,0 +1,27 @@
+{
+  "name": "dairy-data-tools",
+  "displayName": "Dairy Data Tools",
+  "version": "0.1.0",
+  "description": "Skills for dairy nutritionists working from a farm's own DairyComp and EZfeed exports: getting the exports out, a pen review (cows, milk and ECM, events, intake and feed cost), and a ration change before and after with the season check. Read-only scripts, no network.",
+  "author": {
+    "name": "Pádraig Lucey (Dairy Data Science)",
+    "url": "https://dairydatascience.com"
+  },
+  "homepage": "https://github.com/padge01/dairy-data-tools",
+  "repository": "https://github.com/padge01/dairy-data-tools",
+  "license": "Apache-2.0",
+  "keywords": [
+    "dairy",
+    "nutrition",
+    "ration",
+    "DairyComp",
+    "EZfeed",
+    "dry matter intake",
+    "energy-corrected milk",
+    "feed cost",
+    "herd management",
+    "veterinary"
+  ],
+  "supportUrl": "https://github.com/padge01/dairy-data-tools/issues",
+  "documentationUrl": "https://github.com/padge01/dairy-data-tools#readme"
+}

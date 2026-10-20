@@ -1,0 +1,33 @@
+{
+  "name": "dairy-data-tools",
+  "description": "Free tools for dairy nutritionists and their AI agents, from Dairy Data Science",
+  "owner": {
+    "name": "Pádraig Lucey (Dairy Data Science)",
+    "url": "https://dairydatascience.com"
+  },
+  "plugins": [
+    {
+      "name": "dairy-data-tools",
+      "source": "./plugins/dairy-data-tools",
+      "description": "Read a farm's DairyComp and EZfeed exports: DairyComp commands and exports, the herd explorer, pen cows to pen feed, a weekly review, ration change with the season check",
+      "skills": [
+        "./skills/balance-ration",
+        "./skills/dairycomp-exports",
+        "./skills/ezfeed-exports",
+        "./skills/herd-explorer",
+        "./skills/pen-feed",
+        "./skills/ration-change",
+        "./skills/weekly-review"
+      ]
+    },
+    {
+      "name": "bestpred",
+      "source": {
+        "source": "git-subdir",
+        "url": "padge01/bestpred-python",
+        "path": "plugins/bestpred"
+      },
+      "description": "USDA's best prediction of lactation yields: 305-day and mature-equivalent milk, reliability and persistency from test days"
+    }
+  ]
+}
