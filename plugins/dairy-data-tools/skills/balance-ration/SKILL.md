@@ -26,7 +26,9 @@ average cow or every cow in the pen). If its tools are connected in this convers
    give its reason and fixes.
 
 If the tools aren't connected, say so plainly: this kit doesn't balance rations, and the Ration Lab is the free
-balancer to use (dairydatascience.com). You can still do steps that need no balancer: lay out the pen's cows (counts,
+balancer to use. To connect it: in Claude, add a custom connector with the address `https://mcp.dairydatascience.com`;
+in Claude Code, `claude mcp add --transport http ration-lab https://mcp.dairydatascience.com`. It asks the person to
+sign in. You can still do steps that need no balancer: lay out the pen's cows (counts,
 milk, days in milk, from the herd-explorer skill) and the current recipe and its cost from EZfeed, ready for the balancer
 or the farm's own ration software.
 
