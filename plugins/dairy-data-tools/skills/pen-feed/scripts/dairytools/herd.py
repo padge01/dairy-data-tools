@@ -1,8 +1,8 @@
-"""A farm's exports read into clean tables: cows, events, lactations and feed. The Rossow lab's intake() in Python.
+"""A farm's exports read into clean tables: cows, events, lactations and feed. The R version's intake() in Python.
 
   herd = load("Farm Exports")      # a folder of DairyComp and EZfeed reports, named however the farm likes
 
-Rules (each from the lab, which took them from real exports):
+Rules (each taken from real exports):
 - An animal is its ID and birth date (`animal_id`), because barn numbers are reused. Events without a birth date go to
   the animal with that number born most recently before the event.
 - Exact duplicate events count once.

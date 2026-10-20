@@ -1,4 +1,4 @@
-"""Pen cows to pen feed, and the feeding checks. The Rossow lab's pen_dmi, feed_efficiency, iofc, refusals,
+"""Pen cows to pen feed, and the feeding checks. The R version's pen_dmi, feed_efficiency, iofc, refusals,
 feeding_consistency and loading_accuracy in Python.
 
 Every figure is compared with the same pen's own previous weeks; published ranges appear only as a cited line, never

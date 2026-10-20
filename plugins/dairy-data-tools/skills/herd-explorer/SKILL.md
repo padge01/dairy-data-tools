@@ -6,7 +6,7 @@ license: CC-BY-4.0
 
 # Herd explorer
 
-The Rossow Data Lab's herd explorer, from a folder of the farm's exports. The figures come from the script; you say
+The herd explorer, from a folder of the farm's exports. The figures come from the script; you say
 what they show.
 
 ## Run

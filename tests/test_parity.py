@@ -1,8 +1,8 @@
-"""The Python port against the Rossow Data Lab's own R code, number for number, on the same simulated farm.
+"""The Python port against the author's earlier R version, number for number, on the same simulated farm.
 
-tests/parity/herd is the lab's simulate_herd(n_cows = 400, seed = 11, farm = "c", feed = TRUE, layout = "commercial")
-(tests/parity/simulate.R); tests/parity/lab_results.json is what the lab's intake and analyses give on it
-(tests/parity/run_lab.R). Differences allowed: the lab rounds some figures before subtracting (a cent, a tenth).
+tests/parity/herd is the R version's simulate_herd(n_cows = 400, seed = 11, farm = "c", feed = TRUE, layout = "commercial")
+(tests/parity/simulate.R); tests/parity/lab_results.json is what the R version's intake and analyses give on it
+(tests/parity/run_lab.R). Differences allowed: the R version rounds some figures before subtracting (a cent, a tenth).
 """
 
 import json

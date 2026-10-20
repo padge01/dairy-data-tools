@@ -3,12 +3,7 @@ Copyright 2026 Pádraig Lucey (Dairy Data Science, https://dairydatascience.com)
 
 The code (Python scripts, tools and tests) is licensed under the Apache License, Version 2.0 (LICENSE).
 The skills' text (every SKILL.md) is licensed under Creative Commons Attribution 4.0 International (LICENSE-skills.md).
-The sample herd is made up; no real farm's records are in this repository.
-
-Much of the code is ported to Python from the Rossow Data Lab's R package (vmtrc), the author's teaching tools for
-Heidi Rossow's lab at UC Davis. Pádraig Lucey and agAI Inc., who own the Rossow Data Lab, release that ported code
-here under the Apache License 2.0. The sample herd comes from that
-package's herd simulator. UC Davis has not reviewed or endorsed this project.
+The sample herd is made up, by the author's own herd simulator; no real farm's records are in this repository.
 
 Figures and their sources:
 - Energy-corrected milk: 0.327 x milk + 12.95 x fat + 7.65 x protein, in lb (Tyrrell and Reid, 1965; Orth, 1992).

@@ -1,4 +1,4 @@
-"""The herd explorer: the herd, its pens, one pen, one cow. The Rossow lab's herd_summary, pen_summary, pen_card and
+"""The herd explorer: the herd, its pens, one pen, one cow. The R version's herd_summary, pen_summary, pen_card and
 cow_record in Python, with the same rules: every count says what it is out of; milk as a spread, not an average
 alone; a pen's events are for the cows in it now (DairyComp holds only the current pen); remarks never shown."""
 

@@ -1,4 +1,4 @@
-"""The ported Rossow lab rules, on small made-up files with known answers."""
+"""The rules, on small made-up files with known answers."""
 
 import ast
 import sys

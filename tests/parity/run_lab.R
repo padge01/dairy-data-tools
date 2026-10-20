@@ -1,6 +1,6 @@
-# The Rossow Data Lab's own numbers on the parity herd, for tests/test_parity.py to compare with the Python port.
+# The earlier R version's own numbers on the parity herd, for tests/test_parity.py to compare with the Python port.
 #   OUT=tests/parity Rscript tests/parity/run_lab.R
-suppressMessages(pkgload::load_all(Sys.getenv("VMTRC", "C:/GitHub/vmtrc_coder/vmtrc"), quiet = TRUE))
+suppressMessages(pkgload::load_all(Sys.getenv("DAIRY_R"), quiet = TRUE))
 out <- Sys.getenv("OUT")
 clean <- file.path(tempdir(), "parity-clean")
 unlink(clean, recursive = TRUE)

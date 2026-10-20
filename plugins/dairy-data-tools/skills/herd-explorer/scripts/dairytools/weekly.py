@@ -1,5 +1,5 @@
 """The weekly (or visit) analyses a consultant pulls: fresh cows, components and MUN, udder health, reproduction and
-exits. Ported from the Rossow lab (epi.R, transition.R, nutrition.R, udder.R, repro.R) with its denominators: who is
+exits. Ported from the R version (epi.R, transition.R, nutrition.R, udder.R, repro.R) with its denominators: who is
 counted, and what the records can't know yet, is stated every time.
 
 The farm is compared with itself (month by month, pen by pen); a published cut-point appears only as the cited

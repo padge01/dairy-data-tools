@@ -1,5 +1,5 @@
-# Writes the parity fixture with the Rossow Data Lab's own simulator and intake (needs vmtrc_coder beside this repo).
-suppressMessages(pkgload::load_all(Sys.getenv("VMTRC", "C:/GitHub/vmtrc_coder/vmtrc"), quiet = TRUE))
+# Writes the parity fixture with the earlier R version's simulator and intake (DAIRY_R: the folder of that R package).
+suppressMessages(pkgload::load_all(Sys.getenv("DAIRY_R"), quiet = TRUE))
 out <- Sys.getenv("OUT")
 herd_dir <- file.path(out, "herd")
 unlink(herd_dir, recursive = TRUE)

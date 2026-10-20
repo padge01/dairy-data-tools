@@ -1,7 +1,7 @@
 """Write the sample herd: a made-up California dairy's DairyComp and EZfeed exports, in the layouts the kit reads.
 
-Not a real farm. The base is the Rossow Data Lab's own simulator (tools/sample-herd-lab, written by its simulate.R
-with vmtrc's simulate_herd: three years of events, cow and test-day reports, the item list, EZfeed's pen summaries,
+Not a real farm. The base is the author's own herd simulator (tools/sample-herd-lab, written by its simulate.R
+with its simulate_herd: three years of events, cow and test-day reports, the item list, EZfeed's pen summaries,
 feeder loads and refusals). On it goes the ARPAS talk's story: on 28 Sep 2026 pen 21 (older cows) went onto the new
 corn silage pile and its recipe changed (half a pound more bypass fat, half a pound less rolled corn, more canola
 meal) as the heat lifted. Pen 11 (first lactation) kept its recipe. Last fall, pen 21 had no change in the same weeks,
@@ -197,7 +197,7 @@ def pen_milk_lines(paths: dict, rnd: random.Random):
     return rows
 
 
-# --- the lab's files, adjusted ---------------------------------------------------------------------------------------
+# --- the simulator's files, adjusted ---------------------------------------------------------------------------------------
 
 def read_rows(path):
     return list(csv.reader(_io.StringIO("\n".join(dio.read_lines(path)))))
@@ -266,7 +266,7 @@ def main():
                                                           encoding="utf-8", newline="\n")
     (OUT / "rations_2026-10-28.csv").write_text("\n".join(rations_lines()) + "\n", encoding="utf-8", newline="\n")
 
-    # The lab's milking pen summary carries the same days for pens 11 and 21.
+    # The simulator's milking pen summary carries the same days for pens 11 and 21.
     totals = day_totals(this_fall)
     rows = read_rows(LAB / "Pen Summary (Milking Cows).csv")
     pen = None
@@ -294,7 +294,7 @@ def main():
 
 README = f"""# Sample herd
 
-A made-up California dairy's exports, for trying every skill. **Not a real farm**: it comes from the Rossow Data Lab's
+A made-up California dairy's exports, for trying every skill. **Not a real farm**: it comes from the author's
 herd simulator, with a ration-change story laid over it by `tools/make_sample_herd.py` in the repository.
 
 | File | What it is | From |

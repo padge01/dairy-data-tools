@@ -1,6 +1,6 @@
 # Sample herd
 
-A made-up California dairy's exports, for trying every skill. **Not a real farm**: it comes from the Rossow Data Lab's
+A made-up California dairy's exports, for trying every skill. **Not a real farm**: it comes from the author's
 herd simulator, with a ration-change story laid over it by `tools/make_sample_herd.py` in the repository.
 
 | File | What it is | From |
