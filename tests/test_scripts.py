@@ -325,7 +325,7 @@ def test_pen_feed_card_and_visit_page_draw(tmp_path):
     code, out = run(DAIRY, "card", "--folder", HERD, "--feed", "--milk-price", "21.5", "--out", tmp_path / "feed.html")
     assert code == 0, out
     page = (tmp_path / "feed.html").read_text(encoding="utf-8")
-    assert "Pen feed" in page and "IOFC at $21.50" in page
+    assert "Pen feed" in page and "at $21.50 milk" in page and "Loading, fed against called for" in page
     (tmp_path / "acts.txt").write_text("Check fibre and sorting | the feeder\n", encoding="utf-8")
     code, out = run(DAIRY, "card", "--folder", HERD, "--weekly", "--actions", tmp_path / "acts.txt",
                     "--out", tmp_path / "visit.html")
