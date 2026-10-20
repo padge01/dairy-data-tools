@@ -123,14 +123,14 @@ def check(command: str, item_list=None) -> dict:
         items.append(u)
     names = {it["dc_item"]: it for it in item_list or []}
     for u in dict.fromkeys(items):
-        if u in reference.ITEMS and reference.ITEMS[u][3]:
-            problems.append(f"{u} is DairyComp's own calculation ({reference.ITEMS[u][2]}): work it out from the raw "
-                            "records instead.")
+        calculated = (u in reference.ITEMS and reference.ITEMS[u][3]) or (names.get(u) or {}).get("computed")
+        if calculated:
+            # Fine for picking or showing cows inside DairyComp; the kit's own figures never use it.
+            notes.append(f"{u} is DairyComp's own calculation: fine for picking or showing cows in DairyComp, but "
+                         "don't report it as a figure; the kit works its figures out from the raw records.")
         if names and u not in names:
             problems.append(f"{u} isn't an item on this farm. If it's one of the farm's own shortcuts that's fine; "
                             "otherwise DairyComp stops at 'Please Select Item'.")
-        elif names and names[u].get("computed"):
-            notes.append(f"{u} is worked out by DairyComp from {names[u]['op1']} (a calculation, not a record).")
     if verb == "FILEOUT":
         m = re.search(r"\\(\d+)", cmd)
         if m and m.group(1) == "1":

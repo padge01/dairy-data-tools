@@ -45,7 +45,12 @@ conditions, `BY` or `DOWNBY` to sort, and `\` switches. For example:
 SHOW ID PEN LACT MILK FOR PEN=21 BY MILK          the cows in pen 21, lowest milk first
 COUNT FOR FDAT=TODAY                              cows fresh today
 SUM MILK BY PEN FOR LACT>0                        milk by pen
+SHOW ID PEN LACT DIM MILK FOR PEN=21 DIM<60       cows in pen 21 under 60 days in milk
 ```
+
+A date relative to today is a minus sign and days: `FDAT>-365` is "fresh in the last 365 days" (as in a published
+example, `GRAPH W4MK FOR LACT=2 FDAT>-365\RL BY FDAT`). DairyComp's own calculated items (DIM, DCC and the like) are
+fine for picking and showing cows inside DairyComp; the kit just never reports them as its own figures.
 
 Report words: SHOW, SUM, COUNT, PCT, GRAPH, EGRAPH, PLOT, EVENTS, BREDSUM, ECON, MONITOR, FILEOUT. Then **check it**
 on this farm before giving it to the person:
@@ -54,8 +59,8 @@ on this farm before giving it to the person:
 python scripts/dairy.py check "SHOW ID PEN LACT MILK FOR PEN=21 BY MILK" --folder "Farm Exports"
 ```
 
-It catches LIST (it prints), items this farm doesn't have (fine if it's one of the farm's own shortcuts), DairyComp's own
-calculations, and shortcuts over 63 characters. If you aren't sure of a switch or a condition's form, say so and point
+It catches LIST (it prints) and items this farm doesn't have (fine if it's one of the farm's own shortcuts), and notes DairyComp's own
+calculations and shortcuts over 63 characters. If you aren't sure of a switch or a condition's form, say so and point
 to DairyComp's help (F1); never guess one.
 
 ## 3. What the farm's items are
