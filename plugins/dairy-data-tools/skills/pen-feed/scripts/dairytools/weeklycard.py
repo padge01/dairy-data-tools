@@ -1,177 +1,253 @@
-"""The pen-feed card and the weekly (visit) page, in the kit's card look: chips and labelled bars, record only, every
-figure with its count; the farm against itself."""
+"""The pen-feed card and the visit review page, in the kit's card look: big-figure tiles, plain HTML bars (their text
+never scales), a small grid where a table is clearest. Record only: the farm against itself, every figure with its
+count, nothing coloured that isn't also labelled."""
 
 from __future__ import annotations
 
 from datetime import date
 
 from . import feeding, weekly
-from .cards import CSS, chip, esc
+from .cards import CSS, esc
 from .herd import Herd
 
 PAGE_CSS = """
 .page{max-width:1180px;margin:24px auto;background:var(--surface);border:1px solid var(--border);border-radius:22px;
-padding:22px 30px 18px}
-.sec{border-top:1px solid var(--subtle);padding:12px 0}.sec h2{font-size:17px;margin:0 0 8px;font-weight:650}
-.sec .sub{margin-top:-4px}
-.grid2{display:grid;grid-template-columns:1fr 1fr;gap:22px}.grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:18px}
-.penrow{display:grid;grid-template-columns:120px 1fr;gap:12px;align-items:center;padding:8px 0;
-border-bottom:1px solid var(--subtle)}.penrow:last-child{border:0}.penname{font-size:20px;font-weight:700}
-.penname small{display:block;font-size:12.5px;font-weight:400;color:var(--text2)}
-.delta{font-size:12px;color:var(--text2);margin-left:4px}
-.act{display:grid;grid-template-columns:24px 1fr auto;gap:8px;align-items:start;padding:7px 0;
-border-bottom:1px solid var(--subtle);font-size:14.5px}.box{width:16px;height:16px;border:1.5px solid var(--line);
-border-radius:4px;margin-top:2px}.who{font-size:12.5px;color:var(--text2)}
-@media (max-width:820px){.grid2,.grid3{grid-template-columns:1fr}.penrow{grid-template-columns:1fr}}
+padding:22px 30px 16px}
+.sec{border-top:1px solid var(--subtle);padding:14px 0 16px}
+.sec h2{font-size:18px;margin:0 0 2px;font-weight:650}.note{font-size:13px;color:var(--text3);margin:0 0 10px}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:34px}
+.trow{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:0 18px}
+.t{padding:4px 0}.t .k{font-size:13.5px}.t .v{font-size:26px;margin:0}.t .v small{font-size:13.5px}
+.t .n{font-size:12.5px}
+.hb{display:grid;grid-template-columns:minmax(90px,max-content) 1fr;column-gap:12px;row-gap:7px;align-items:center}
+.hb .l{font-size:14px;white-space:nowrap}.hb .track{display:flex;align-items:center;gap:8px;min-width:0}
+.hb .bar{height:16px;border-radius:3px;background:var(--bar);flex:0 0 auto}
+.hb .val{font-size:13.5px;font-weight:650;white-space:nowrap}.hb .val small{font-weight:400;color:var(--text2)}
+.div{display:grid;grid-template-columns:170px minmax(0,260px) minmax(0,260px) max-content;column-gap:0;row-gap:7px;align-items:center}
+.div .l{font-size:14px;padding-right:10px}.div .neg{display:flex;justify-content:flex-end;border-right:1.5px solid var(--line)}
+.div .pos{display:flex;justify-content:flex-start}.div .bar{height:14px;background:var(--bar)}
+.div .neg .bar{border-radius:3px 0 0 3px}.div .pos .bar{border-radius:0 3px 3px 0}
+.div .val{font-size:13.5px;font-weight:650;padding-left:10px;white-space:nowrap}.div .axis{font-size:12px;color:var(--text3)}
+.pen{display:grid;grid-template-columns:150px 1fr 260px;gap:18px;align-items:start;padding:12px 0;
+border-bottom:1px solid var(--subtle)}.pen:last-child{border:0}
+.pen .who{font-size:26px;font-weight:700;line-height:1.1}.pen .who small{display:block;font-size:13px;font-weight:400;
+color:var(--text2);margin-top:3px}
+.facts{font-size:13.5px;line-height:1.75;color:var(--text2)}.facts b{color:var(--text);font-weight:650}
+.grid{display:grid;border:1px solid var(--subtle);border-radius:10px;overflow:hidden;font-size:14px;align-self:start}
+.grid div{padding:6px 10px;border-bottom:1px solid var(--subtle)}.grid .h{font-size:12.5px;color:var(--text2);
+background:var(--raised)}.grid .r{font-weight:600}
+.muted{font-size:13px;color:var(--text3);margin-top:8px}
+.act{display:grid;grid-template-columns:24px 1fr auto;gap:8px;align-items:start;padding:8px 0;
+border-bottom:1px solid var(--subtle);font-size:15px}.act:last-child{border:0}.box{width:16px;height:16px;
+border:1.5px solid var(--line);border-radius:4px;margin-top:3px}.act .who{font-size:13px;color:var(--text2)}
+@media (max-width:820px){.two{grid-template-columns:1fr}.pen{grid-template-columns:1fr}.div{grid-template-columns:110px 1fr 1fr 96px}}
 """
 
 
-def _page(title: str, head_sub: str, body: str, foot: str) -> str:
+def _page(title: str, sub: str, body: str, foot: str) -> str:
     return ("<!doctype html><html lang='en'><head><meta charset='utf-8'><meta name='viewport' "
             f"content='width=device-width,initial-scale=1'><title>{esc(title)}</title><style>{CSS}{PAGE_CSS}</style>"
-            f"</head><body><div class='page'><div class='head'><h1>{esc(title)}</h1><span>{esc(head_sub)}</span></div>"
+            f"</head><body><div class='page'><div class='head'><h1>{esc(title)}</h1><span>{esc(sub)}</span></div>"
             f"{body}<div class='foot'>{esc(foot)}</div></div></body></html>")
 
 
-def bars(rows, unit="", width=520, fmt="{:.2f}") -> str:
-    """Horizontal bars, one per row (label, value), each with its value written at its end; no colour needed."""
-    rows = [(l, v) for l, v in rows if v is not None]
+def tile(label, value, unit="", note="") -> str:
+    return (f"<div class='t'><div class='k'>{esc(label)}</div><div class='v'>{esc(value)}"
+            + (f"<small>{esc(unit)}</small>" if unit else "") + "</div>"
+            + (f"<div class='n'>{esc(note)}</div>" if note else "") + "</div>")
+
+
+def hbars(rows, fmt="{:.1f}", unit="") -> str:
+    """rows: (label, value, extra words). Bars scaled to the largest; every bar carries its value in words."""
+    rows = [r for r in rows if r[1] is not None]
     if not rows:
-        return ""
-    top = max(v for _, v in rows) or 1
-    h = 26
-    out = [f'<svg viewBox="0 0 {width} {h * len(rows) + 4}" width="{width}" style="max-width:100%" role="img" aria-label="'
-           + esc("; ".join(f"{l} {fmt.format(v)}{unit}" for l, v in rows)) + '">']
-    for i, (label, v) in enumerate(rows):
-        y = i * h + 4
-        w = (width - 190) * v / top
-        out.append(f'<text x="0" y="{y + 15}" font-size="13" class="lab">{esc(label)}</text>'
-                   f'<rect x="100" y="{y + 3}" width="{w:.1f}" height="16" rx="3" fill="var(--bar)"/>'
-                   f'<text x="{106 + w:.1f}" y="{y + 15}" font-size="13" class="lab" font-weight="650">'
-                   f'{fmt.format(v)}{esc(unit)}</text>')
-    out.append("</svg>")
-    return "".join(out)
+        return "<p class='muted'>Nothing recorded.</p>"
+    top = max(r[1] for r in rows) or 1
+    room = 50 if any(r[2] for r in rows) else 78   # leave room for the words after the bar
+    out = []
+    for label, value, extra in rows:
+        width = max(2.0, room * value / top)
+        out.append(f"<div class='l'>{esc(label)}</div><div class='track'><div class='bar' style='width:{width:.1f}%'>"
+                   f"</div><span class='val'>{esc(fmt.format(value))}{esc(unit)}"
+                   + (f" <small>{esc(extra)}</small>" if extra else "") + "</span></div>")
+    return f"<div class='hb'>{''.join(out)}</div>"
 
 
 def _money(v):
     return "n/a" if v is None else f"${v:,.2f}"
 
 
-def _num(v, places=1, unit=""):
-    return "n/a" if v is None else f"{v:,.{places}f}{unit}"
+def _num(v, places=1):
+    return "n/a" if v is None else f"{v:,.{places}f}"
 
+
+# --- pen feed --------------------------------------------------------------------------------------------------------
 
 def pen_feed_html(herd: Herd, milk_price: float | None = None, days: int = 7) -> str:
     pf = feeding.pen_feed(herd, days=days, milk_price=milk_price)
     pens = [p for p in pf["pens"] if p.get("tested")]
-    rows = []
+    span = ""
+    if pens:
+        a, _, b = pens[0]["days"].partition(" to ")
+        fa, fb = date.fromisoformat(a), date.fromisoformat(b)
+        span = f"{fa:%b} {fa.day} – {fb:%b} {fb.day}"
+    blocks = []
     for p in pens:
         dmi, before = p.get("dmi_lb_per_cow"), p.get("dmi_before")
-        change = f"<span class='delta'>{dmi - before:+.1f} on the week before</span>" if dmi and before else ""
-        chips = [chip("ECM per cow", _num(p.get("ecm_mean_lb"), 1, " lb")),
-                 chip("DM fed per cow", _num(dmi, 1, " lb")),
-                 chip("ECM per lb DM", _num(p.get("ecm_per_lb_dm"), 2)),
-                 chip("Feed per cow", _money(p.get("feed_cost_per_cow"))),
-                 chip("Feed per cwt", _money(p.get("feed_cost_per_cwt")))]
+        moved = f"{dmi - before:+.1f} lb on the week before" if dmi is not None and before is not None else ""
+        facts = [f"ECM <b>{esc(_num(p.get('ecm_mean_lb')))} lb</b> per cow, last test",
+                 f"Feed <b>{esc(_money(p.get('feed_cost_per_cow')))}</b> per cow a day"]
         if "iofc_per_cow" in p:
-            chips.append(chip(f"IOFC at ${milk_price:.2f}", _money(p["iofc_per_cow"])))
+            facts.append(f"IOFC <b>{esc(_money(p['iofc_per_cow']))}</b> per cow at ${milk_price:.2f} milk")
         if p.get("nasem_predicted_dmi"):
-            chips.append(chip("NASEM predicts", _num(p["nasem_predicted_dmi"], 1, " lb")))
-        rows.append(f"<div class='penrow'><div class='penname'>Pen {esc(p['pen'])}<small>{p['cows']} cows · "
-                    f"{p['tested']} tested</small></div><div><div class='chips'>{''.join(chips)}</div>{change}</div></div>")
-    eff = bars([(f"Pen {p['pen']}", p.get("ecm_per_lb_dm")) for p in pens], fmt="{:.2f}")
-    cwt = bars([(f"Pen {p['pen']}", p.get("feed_cost_per_cwt")) for p in pens], unit="", fmt="${:.2f}")
-    loading = ""
+            facts.append(f"NASEM predicts <b>{esc(_num(p['nasem_predicted_dmi']))} lb</b> DM for these cows")
+        blocks.append(
+            f"<div class='pen'><div class='who'>Pen {esc(p['pen'])}<small>{p['cows']} cows · {p['tested']} tested</small>"
+            f"</div><div class='trow'>{tile('ECM per lb DM', _num(p.get('ecm_per_lb_dm'), 2))}"
+            f"{tile('DM fed per cow', _num(dmi), ' lb', moved)}"
+            f"{tile('Feed cost per cwt', _money(p.get('feed_cost_per_cwt')))}</div>"
+            f"<div class='facts'>{'<br>'.join(facts)}</div></div>")
+    eff = hbars([(f"Pen {p['pen']}", p.get("ecm_per_lb_dm"), "") for p in pens], fmt="{:.2f}")
+    cwt = hbars([(f"Pen {p['pen']}", p.get("feed_cost_per_cwt"), "") for p in pens], fmt="${:.2f}")
+    loading = "<p class='muted'>No Ingredient Intake report in the folder.</p>"
     try:
-        la = feeding.loading_accuracy(herd, by="ingredient", days=14)["rows"][:6]
-        loading = ("<div class='chips'>" + "".join(
-            chip(r["ingredient"], f"{r['mean_deviation_pct']:+.1f}%" + (f" · {r['mean_deviation_lb']:+.2f} lb"
-                                     if abs(r["mean_deviation_lb"]) >= .005 else "")) for r in la)
-            + "</div><div class='sub'>Fed against called for, average a day over 14 days, largest first</div>")
+        la = feeding.loading_accuracy(herd, by="ingredient", days=14)["rows"][:8]
+        top = max(abs(r["mean_deviation_pct"]) for r in la) or 1
+        rows = []
+        for r in la:
+            d = r["mean_deviation_pct"]
+            w = max(1.5, 92 * abs(d) / top)
+            neg = f"<div class='bar' style='width:{w:.1f}%'></div>" if d < 0 else ""
+            pos = f"<div class='bar' style='width:{w:.1f}%'></div>" if d >= 0 else ""
+            lb = f" · {r['mean_deviation_lb']:+.2f} lb" if abs(r["mean_deviation_lb"]) >= .005 else ""
+            rows.append(f"<div class='l'>{esc(r['ingredient'])}</div><div class='neg'>{neg}</div><div class='pos'>{pos}"
+                        f"</div><div class='val'>{d:+.1f}%{esc(lb)}</div>")
+        loading = (f"<div class='div'><div></div><div class='axis' style='text-align:right;padding-right:6px'>under"
+                   f"</div><div class='axis' style='padding-left:6px'>over</div><div></div>{''.join(rows)}</div>")
     except SystemExit:
-        loading = "<p class='sub'>No ingredient intake report in the folder.</p>"
+        pass
     end = herd.as_of
-    body = (f"<div class='sec'><h2>Each pen, last {days} days</h2>{''.join(rows)}</div>"
-            f"<div class='sec grid2'><div><h2>ECM per lb of dry matter</h2>{eff}</div>"
-            f"<div><h2>Feed cost per cwt of milk</h2>{cwt}</div></div>"
-            f"<div class='sec'><h2>Loading</h2>{loading}</div>")
-    foot = (f"From DairyComp's cow report and EZfeed's pen summary and intake reports. Records end {end:%b %d, %Y}. "
-            "Per cow uses DairyComp's head count; dry matter is delivered, not eaten; ECM is each cow's last test; "
-            "NASEM 2021 equation 2-1 for the predicted intake.")
-    return _page("Pen feed", f"Milking pens · {days} days to {end:%b} {end.day}", body, foot)
+    body = (f"<div class='sec'><h2>Each pen</h2><p class='note'>{esc(span)}. Per cow uses DairyComp's head count.</p>"
+            f"{''.join(blocks)}</div>"
+            f"<div class='sec two'><div><h2>ECM per lb of dry matter</h2><p class='note'>Each pen's own figure; compare "
+            f"it with its own past weeks</p>{eff}</div><div><h2>Feed cost per cwt of milk</h2><p class='note'>Feed cost "
+            f"per cow over its milk at the last test</p>{cwt}</div></div>"
+            f"<div class='sec'><h2>Loading, fed against called for</h2><p class='note'>Each feed's average miss a day "
+            f"over 14 days, all pens; the largest first</p>{loading}</div>")
+    foot = (f"From DairyComp's cow report and EZfeed's pen summary and ingredient intake reports. Records end "
+            f"{end:%b %d, %Y}. Dry matter is delivered, not eaten. ECM is each cow's last test (0.327 × milk + "
+            "12.95 × fat lb + 7.65 × protein lb). NASEM (2021) equation 2-1 with body weight 1,550 lb (1,350 first "
+            "lactation) and body condition 3 where the farm doesn't record them.")
+    return _page("Pen feed", f"{len(pens)} milking pens · {days} days to {end:%b} {end.day}", body, foot)
 
+
+# --- visit review ----------------------------------------------------------------------------------------------------
 
 def weekly_html(herd: Herd, milk_price: float | None = None, actions: list[tuple[str, str]] | None = None) -> str:
     w = weekly.weekly(herd, milk_price)
     h = w["herd"]
+    t = h["test"]
     end = herd.as_of
     sec = []
-    t = h["test"]
-    sec.append("<div class='sec'><h2>The herd</h2><div class='chips'>"
-               + chip("Milking", h["milking"]) + chip("Dry", h["dry"]) + chip("Heifers", h["heifers"])
-               + chip("Left, 12 months", h["left_last_12_months"])
-               + chip("Median days in milk", _num(h["median_dim"], 0))
-               + chip("ECM per cow, last test", _num(t["ecm_mean_lb"], 1, " lb"))
-               + chip("SCC over 200k", f"{t['scc_over_200']} of {t['scc_tested']}") + "</div></div>")
+
+    sec.append("<div class='sec'><h2>The herd</h2><p class='note'>Animals in the herd on the day the records end</p>"
+               "<div class='trow'>" + tile("Milking", h["milking"]) + tile("Dry", h["dry"]) + tile("Heifers", h["heifers"])
+               + tile("Left, last 12 months", h["left_last_12_months"])
+               + tile("Median days in milk", _num(h["median_dim"], 0))
+               + tile("ECM per cow, last test", _num(t["ecm_mean_lb"]), " lb", f"{t['tested']} of {t['of']} tested")
+               + "</div></div>")
+
     pens = [p for p in w["pens"] if p["kind"] == "milking" and p["tested"]]
-    sec.append("<div class='sec'><h2>Pens, ECM per cow at the last test</h2>"
-               + bars([(f"Pen {p['pen']}", p["ecm_mean"]) for p in pens], unit=" lb", fmt="{:.1f}") + "</div>")
-    # Fresh cows.
+    pen_bars = hbars([(f"Pen {p['pen']}", p["ecm_mean"], f"{p['tested']} cows · median {p['median_dim']:.0f} DIM"
+                       if p["median_dim"] is not None else f"{p['tested']} cows") for p in pens], unit=" lb")
+    feed = w.get("pen_feed")
+    feed_bars = ""
+    if isinstance(feed, dict):
+        fp = [p for p in feed["pens"] if p.get("tested")]
+        feed_bars = ("<div><h2>Feed efficiency, last 7 days</h2><p class='note'>ECM per lb of dry matter fed</p>"
+                     + hbars([(f"Pen {p['pen']}", p.get("ecm_per_lb_dm"), f"{_money(p.get('feed_cost_per_cwt'))} per cwt")
+                              for p in fp], fmt="{:.2f}") + "</div>")
+    sec.append(f"<div class='sec two'><div><h2>Pens</h2><p class='note'>ECM per cow at the last test</p>{pen_bars}</div>"
+               f"{feed_bars}</div>")
+
     fc = w["fresh_cows"]
-    dz = []
+    recorded, missing = [], []
     for d in fc["diseases"]:
         if "by_parity" not in d:
-            dz.append(chip(d["event"].capitalize(), "not recorded"))
+            missing.append(d["event"])
             continue
         n = sum(r["lactations"] for r in d["by_parity"])
         k = sum(r["cases"] for r in d["by_parity"])
-        dz.append(chip(d["event"].capitalize(), f"{k} of {n} · {100 * k / n:.1f}%" if n else "n/a"))
-    ex = "".join(chip(f"Left by {e['within_dim']} DIM", f"{e['left']} of {e['lactations']}") for e in fc["exits"])
-    fp = "".join(chip(f"Fat:protein > 1.4, parity {r['parity']}", f"{r['over_1_4']} of {r['cows']}") for r in fc["fat_protein_5_40_dim"])
-    sec.append(f"<div class='sec'><h2>Fresh cows</h2><div class='chips'>{''.join(dz)}</div>"
-               f"<div class='sub'>First case within 30 days in milk (ketosis 21), lactations observed from calving, as "
-               f"the farm records them</div><div class='chips'>{ex}{fp}</div><div class='sub'>Fat:protein at 5-40 days in "
-               f"milk, each cow's last test (after Oetzel)</div></div>")
-    # Components and udder side by side.
+        if n:
+            recorded.append((d["event"].capitalize(), 100 * k / n, f"{k} of {n}"))
+    recorded.sort(key=lambda r: -r[1])
+    exits = "".join(tile(f"Left by {e['within_dim']} days in milk", f"{e['left']}", f" of {e['lactations']}",
+                         f"{e['died']} died · {e['sold']} sold") for e in fc["exits"])
+    fpq = "".join(tile(f"Fat:protein over 1.4, {'first lactation' if r['parity'] == '1' else 'older cows'}",
+                       f"{r['over_1_4']}", f" of {r['cows']}", "too few to read" if r["note"] else "5-40 days in milk")
+                  for r in fc["fat_protein_5_40_dim"])
+    sec.append("<div class='sec'><h2>Fresh cows</h2><p class='note'>First case within 30 days in milk (ketosis 21), "
+               "lactations followed from calving, as the farm records them</p><div class='two'><div>"
+               + hbars(recorded, unit="%") + (f"<p class='muted'>Not recorded on this farm: {esc(', '.join(missing))}</p>"
+                                               if missing else "")
+               + f"</div><div class='trow'>{exits}{fpq}</div></div></div>")
+
     comp = w["components"]
-    stage = "".join(chip(f"{r['dim']} DIM, parity {r['parity']}", f"{r['fat_pct']:.2f}% · {r['protein_pct']:.2f}%")
-                    for r in comp["by_stage"])
+    cells = ["<div class='h'>Days in milk</div><div class='h'>First lactation</div><div class='h'>Older cows</div>"]
+    bands = []
+    for r in comp["by_stage"]:
+        if r["dim"] not in bands:
+            bands.append(r["dim"])
+    for b in bands:
+        def cell(par):
+            r = next((x for x in comp["by_stage"] if x["dim"] == b and x["parity"] == par), None)
+            return "–" if not r else f"{r['fat_pct']:.2f}% · {r['protein_pct']:.2f}%  ({r['cows']})"
+        cells.append(f"<div class='r'>{esc(b)}</div><div>{esc(cell('1'))}</div><div>{esc(cell('2+'))}</div>")
+    grid = f"<div class='grid' style='grid-template-columns:1.1fr 1fr 1fr'>{''.join(cells)}</div>"
     mid = comp["mid_lactation"]
-    udder = w["udder_health"]
-    pens_scc = "".join(chip(f"Pen {p['pen']}", f"{p['over_200']} of {p['tested']}") for p in udder["high_scc_by_pen"])
-    bt = udder["between_tests"]
-    names = {"new": "New high", "chronic": "Chronic", "cured": "Cured", "low both": "Low at both tests"}
-    dyn = "".join(chip(names.get(k, k), v) for k, v in bt.items() if k != "cows") if isinstance(bt, dict) else ""
-    cm = udder["clinical_mastitis_by_month"]
-    cm_bars = bars([(r["month"], r["per_100_cows"]) for r in cm[-6:]], fmt="{:.1f}") if isinstance(cm, list) else \
-        f"<p class='sub'>{esc(cm)}</p>"
-    mid_chips = (chip("Inverted, 41-150 DIM", f"{mid['inverted']} of {mid['cows']}")
-                 + chip("Fat under 3.0%, 41-150 DIM", f"{mid['fat_under_3']} of {mid['cows']}"))
     mun = comp["mun_by_pen"]
-    mun_chips = "".join(chip(f"MUN, pen {m['pen']}", f"{m['mean']:.1f} mg/dL") for m in mun) if isinstance(mun, list) else ""
-    sec.append(f"<div class='sec grid2'><div><h2>Components</h2><div class='chips'>{stage}</div><div class='sub'>Fat · "
-               f"protein, each cow's last test</div><div class='chips'>{mid_chips}{mun_chips}"
-               f"</div></div><div><h2>Udder health</h2><div class='chips'>{pens_scc}</div><div class='sub'>SCC over 200,000 "
-               f"by pen</div><div class='chips'>{dyn}</div><div class='sub'>Between the last two tests</div>"
-               f"<div class='sub'>Clinical mastitis per 100 cows in milk, by month</div>{cm_bars}</div></div>")
-    # Reproduction and exits.
+    mun_tiles = "".join(tile(f"MUN, pen {m['pen']}", f"{m['mean']:.1f}", " mg/dL", f"{m['cows']} cows")
+                        for m in mun) if isinstance(mun, list) else ""
+    sec.append("<div class='sec'><h2>Components</h2><p class='note'>Fat · protein at each cow's last test (cows)</p>"
+               f"<div class='two'>{grid}<div class='trow'>"
+               + tile("Inverted, 41-150 DIM", f"{mid['inverted']}", f" of {mid['cows']}", "fat 0.2 points or more under protein")
+               + tile("Fat under 3.0%, 41-150 DIM", f"{mid['fat_under_3']}", f" of {mid['cows']}") + mun_tiles
+               + "</div></div>"
+               + ("" if isinstance(mun, list) else "<p class='muted'>MUN isn't in the cow report.</p>") + "</div>")
+
+    ud = w["udder_health"]
+    scc = hbars([(f"Pen {p['pen']}", p["pct"], f"{p['over_200']} of {p['tested']}") for p in ud["high_scc_by_pen"]
+                 if p["tested"]], unit="%")
+    bt = ud["between_tests"]
+    dyn = "".join(tile(n, bt.get(k, 0)) for k, n in (("new", "New high"), ("chronic", "Chronic"), ("cured", "Cured"),
+                                                     ("low both", "Low at both tests"))) if isinstance(bt, dict) else ""
+    cm = ud["clinical_mastitis_by_month"]
+    cm_html = hbars([(r["month"], r["per_100_cows"], f"{r['cases']} cases") for r in cm[-6:]]) \
+        if isinstance(cm, list) else f"<p class='muted'>{esc(cm)}</p>"
+    sec.append("<div class='sec'><h2>Udder health</h2><div class='two'><div><p class='note'>SCC over 200,000, last test"
+               f"</p>{scc}<p class='note' style='margin-top:12px'>Between the last two tests</p><div class='trow'>{dyn}"
+               f"</div></div><div><p class='note'>Clinical mastitis per 100 cows in milk, whole months</p>{cm_html}"
+               "</div></div></div>")
+
     rp = w["reproduction"]
-    pr = "".join(chip(f"Parity {r['parity']}", f"PR {r['pregnancy_rate_pct']}% · CR {r['conception_rate_pct']}%")
-                 for r in rp.get("pregnancy_rate", []))
-    sv = "".join(chip(f"Service {r['service']}", f"{r['pct']}% of {r['services']}") for r in rp.get("conception_by_service", []))
-    exits = w["exits"]["by_reason_and_stage"]
-    ex2 = "".join(chip(f"{e['reason'].capitalize()}, {e['stage']}", e["animals"]) for e in exits)
-    sec.append(f"<div class='sec grid2'><div><h2>Reproduction</h2><div class='chips'>{pr}</div><div class='sub'>21-day "
-               f"pregnancy rate and conception rate</div><div class='chips'>{sv}</div><div class='sub'>Conception by "
-               f"service</div></div><div><h2>Who left, 12 months</h2><div class='chips'>{ex2}</div></div></div>")
-    if "pen_feed" in w and isinstance(w["pen_feed"], dict):
-        feedchips = "".join(chip(f"Pen {p['pen']}", f"{_num(p.get('ecm_per_lb_dm'), 2)} ECM/lb DM · "
-                                 f"{_money(p.get('feed_cost_per_cwt'))}/cwt") for p in w["pen_feed"]["pens"] if p.get("tested"))
-        sec.append(f"<div class='sec'><h2>Feed, last 7 days</h2><div class='chips'>{feedchips}</div></div>")
+    repro_tiles = "".join(
+        tile(f"{'First lactation' if r['parity'] == '1' else 'Older cows'}", f"{r['pregnancy_rate_pct']}", "%",
+             f"pregnancy rate · service {r['service_rate_pct']}% · conception {r['conception_rate_pct']}%")
+        for r in rp.get("pregnancy_rate", []))
+    serv = hbars([(f"Service {r['service']}", r["pct"], f"{r['pregnant']} of {r['services']}")
+                  for r in rp.get("conception_by_service", [])], unit="%")
+    left = w["exits"]["by_reason_and_stage"]
+    left_bars = hbars([(f"{e['reason'].capitalize()}, {e['stage']}", e["animals"], "") for e in left], fmt="{:.0f}")
+    sec.append("<div class='sec two'><div><h2>Reproduction</h2><p class='note'>21-day pregnancy rate, the way "
+               f"DairyComp's BREDSUM counts</p><div class='trow'>{repro_tiles}</div><p class='note' style='margin-top:"
+               f"12px'>Conception by service</p>{serv}</div><div><h2>Who left, last 12 months</h2><p class='note'>By "
+               f"stage of lactation</p>{left_bars}</div></div>")
+
     acts = "".join(f"<div class='act'><span class='box'></span><span>{esc(a)}</span><span class='who'>{esc(who)}</span>"
                    "</div>" for a, who in (actions or []))
     sec.append("<div class='sec'><h2>Actions for the next visit</h2>"
-               + (acts or "<p class='sub'>None written yet.</p>") + "</div>")
+               + (acts or "<p class='muted'>None written yet.</p>") + "</div>")
     foot = (f"From DairyComp's cow, test and event reports and EZfeed's reports. Records end {end:%b %d, %Y}. Every "
-            "figure is the farm's own, against itself; not recorded is not zero.")
-    return _page("Visit review", f"{h['milking']} milking · records to {end:%b} {end.day}, {end.year}", "".join(sec), foot)
+            "figure is the farm's own; not recorded is not zero; no published targets.")
+    return _page("Visit review", f"Records to {end:%b} {end.day}, {end.year} · {h['milking']} cows milking",
+                 "".join(sec), foot)
