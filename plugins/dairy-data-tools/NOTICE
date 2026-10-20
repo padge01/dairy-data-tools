@@ -10,6 +10,9 @@ Figures and their sources:
 - Predicted dry matter intake: National Academies of Sciences, Engineering, and Medicine (2021), Nutrient
   Requirements of Dairy Cattle, 8th revised edition, equation 2-1.
 - 21-day pregnancy rate: counted the way DairyComp 305's BREDSUM report counts it.
+- What a ration holds, where the farm has no analyses of its own: the NASEM (2021) feed library, from the nasem_dairy
+  package (Fieguth, Innes and Cant). Those values are NASEM's and keep NASEM's terms (academic use with acknowledgment;
+  commercial use needs NASEM's release), not this project's licence: see dairytools/data/NOTICE-nasem.md.
 
 DairyComp 305 and EZfeed are products of Valley Ag Software. This project is not affiliated with or endorsed
 by Valley Ag Software. It reads only export files that the programs write for their users.

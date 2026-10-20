@@ -270,3 +270,26 @@ def test_the_sample_herds_monthly_test_snapshots_give_a_cow_her_tests():
     herd = load(ROOT / "plugins" / "dairy-data-tools" / "sample-herd")
     tests = [p for p in herd.milk_history.get("3004", []) if p["kind"] == "test"]
     assert len(tests) == 3 and len({p["day"] for p in tests}) == 3
+
+
+# --- what a ration holds ---------------------------------------------------------------------------------------------
+
+def test_feeds_match_nasem_book_values_and_the_farms_analyses_win():
+    from dairytools import nutrients
+    lib = nutrients.library()
+    comp, source, book = nutrients.composition("Corn Silage 25 HR", {}, lib)
+    assert source == "book" and book == "Corn silage, typical" and abs(sum(comp.values()) - 100) < 1e-6
+    assert nutrients.composition("Lactation mineral", {}, lib)[1] == "mineral"
+    assert nutrients.composition("Mystery pellet", {}, lib)[1] == "none"
+    own = {"corn silage 25 hr": {"ndf": 38.0, "starch": 35.0, "cp": 8.0, "fat": 3.0, "wsc": None, "ash": None}}
+    comp, source, _ = nutrients.composition("Corn Silage 25 HR", own, lib)
+    assert source == "farm" and comp["ndf"] == 38.0
+
+
+def test_a_pens_day_splits_into_shares_that_add_to_one():
+    from dairytools import nutrients
+    herd = load(ROOT / "plugins" / "dairy-data-tools" / "sample-herd")
+    shares, how = nutrients.pen_layers_by_day(herd, "Pen 21")
+    day = max(shares)
+    assert abs(sum(shares[day].values()) - 1) < 1e-9
+    assert 0.25 < shares[day]["ndf"] < 0.36 and how["Bypass fat"][1] == "Calcium soaps"

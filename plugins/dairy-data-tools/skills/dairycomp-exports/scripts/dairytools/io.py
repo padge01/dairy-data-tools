@@ -352,6 +352,9 @@ def identify(path) -> dict:
         kind = "cows"
     elif {"DATE", "PEN", "MILK_LB"} <= {h.lower().upper() for h in header} or header[:3] == ["DATE", "PEN", "MILK_LB"]:
         kind = "pen_milk"
+    elif set(header) & {"FEED", "INGREDIENT", "FEED NAME"} and set(header) & {"NDF", "ANDF"} and \
+            set(header) & {"CP", "PROTEIN"}:
+        kind = "analyses"   # the farm's own feed analyses
     else:
         kind = "unknown"
     return {"path": str(p), "kind": kind, "detail": " ".join(h for h in header if h)}
