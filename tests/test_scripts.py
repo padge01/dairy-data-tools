@@ -264,7 +264,8 @@ def test_plugin_folder_fits_the_directorys_limits():
     assert len(files) <= 512
     for p in files:
         assert p.stat().st_size < 256 * 1024, p
-        assert p.suffix in {".md", ".py", ".csv", ".json", ""} or p.name == "LICENSE", p
+        icon = p == PLUGIN / ".claude-plugin" / "icon.png"   # the one picture: the listing icon
+        assert p.suffix in {".md", ".py", ".csv", ".json", ""} or p.name == "LICENSE" or icon, p
         assert p.name not in {".DS_Store", "Thumbs.db", "desktop.ini"}
 
 
@@ -333,3 +334,10 @@ def test_pen_feed_card_and_visit_page_draw(tmp_path):
     page = (tmp_path / "visit.html").read_text(encoding="utf-8")
     assert "Visit review" in page and "Check fibre and sorting" in page and "Fresh cows" in page
     assert "http" not in page.split("</style>")[1]
+
+
+def test_the_icon_is_a_square_png_the_directory_accepts():
+    data = (PLUGIN / ".claude-plugin" / "icon.png").read_bytes()
+    assert data[:4] == bytes([0x89]) + b"PNG" and len(data) < 2 * 1024 * 1024
+    width, height = int.from_bytes(data[16:20], "big"), int.from_bytes(data[20:24], "big")
+    assert width == height and 512 <= width <= 2048

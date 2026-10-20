@@ -38,6 +38,7 @@
       "How is pen 21 doing?",
       "What's pen 21's feed efficiency and IOFC at $21.50 milk?",
       "Get me ready for a visit: fresh cows, components, mastitis, pregnancy rate."
-    ]
+    ],
+    "logo": "./.claude-plugin/icon.png"
   }
 }
