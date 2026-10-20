@@ -30,7 +30,7 @@ def make(width, height, out, crop_ratio=None):
         d.text((pad, y), line, font=font(False, 28 * s), fill=INK)
         y += 39 * s
     y += 20 * s
-    for ask in ("How is pen 21 doing?", "What's the pen's IOFC?", "Did the ration change work,", "or is it the season?"):
+    for ask in ("How is pen 21 doing?", "What's the pen's IOFC?", "Did the ration change work?"):
         d.text((pad, y), ask, font=font(False, 22 * s), fill=GREY)
         y += 30 * s
     d.text((pad, height * s - pad - 14 * s), "github.com/padge01/dairy-data-tools", font=font(True, 23 * s), fill=INK)
