@@ -89,7 +89,8 @@ def pen_feed_html(herd: Herd, milk_price: float | None = None, days: int = 7, sl
     """Each pen's feed against its milk, each pen's ration as bars, loading. slide: for a projector, bigger and
     with fewer items (each pen's three figures and its ration)."""
     pf = feeding.pen_feed(herd, days=days, milk_price=milk_price)
-    pens = [p for p in pf["pens"] if p.get("dmi_lb_per_cow") is not None]   # every pen fed, tested or not
+    # Milking pens: their cows tested or weighed (dry and heifer pens have no milk to set against the feed)
+    pens = [p for p in pf["pens"] if p.get("tested") and p.get("dmi_lb_per_cow") is not None]
     span = ""
     if pens:
         a, _, b = pens[0]["days"].partition(" to ")

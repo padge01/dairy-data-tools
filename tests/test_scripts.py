@@ -364,3 +364,10 @@ def test_slide_cards_are_bigger_with_fewer_items(tmp_path):
         assert code == 0, out
         page = (tmp_path / "s.html").read_text(encoding="utf-8")
         assert "class=slide" in page and "Health, last" not in page and "Loading, fed against" not in page
+
+
+def test_the_pen_feed_card_lists_milking_pens_only(tmp_path):
+    code, out = run(DAIRY, "card", "--folder", HERD, "--feed", "--out", tmp_path / "f.html")
+    assert code == 0, out
+    page = (tmp_path / "f.html").read_text(encoding="utf-8")
+    assert "3 milking pens" in page and "Pen 40</div>" not in page and "<div class='who'>Pen 40" not in page

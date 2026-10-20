@@ -48,6 +48,29 @@ You get the figures, where each came from and what it's out of, and a card like 
 No DairyComp export yet? Ask *"What do I type in DairyComp to export what you need?"*. It writes the SHOW commands from
 the farm's own item list.
 
+## What you get
+
+Each answer comes back as a card. These are from the sample herd.
+
+<table>
+<tr>
+<td width="50%" valign="top"><b>A cow</b><br>Her milk this lactation, her place in the pen, what's happened to her.<br><br>
+<img src="https://raw.githubusercontent.com/padge01/dairy-data-tools/main/docs/images/card-cow.png" alt="Cow 3004's card" width="100%"></td>
+<td width="50%" valign="top"><b>Pen feed</b><br>Each pen's intake, efficiency, cost per cwt and ration side by side.<br><br>
+<img src="https://raw.githubusercontent.com/padge01/dairy-data-tools/main/docs/images/card-pen-feed.png" alt="The pen feed card" width="100%"></td>
+</tr>
+<tr>
+<td valign="top"><b>Visit review</b><br>Fresh cows, components, udder health, reproduction, who left, and what to check next.<br><br>
+<img src="https://raw.githubusercontent.com/padge01/dairy-data-tools/main/docs/images/card-visit.png" alt="The visit review" width="100%"></td>
+<td valign="top"><b>On a slide</b><br>Add <code>--slide</code>: bigger, fewer items, sized for a talk or a meeting.<br><br>
+<img src="https://raw.githubusercontent.com/padge01/dairy-data-tools/main/docs/images/card-slide.png" alt="Pen 21's card as a slide" width="100%"></td>
+</tr>
+</table>
+
+Herds that test get ECM from their tests. Herds that only weigh milk get each cow's daily weight, and the card says so.
+Save the exports more than once and the cards join them: each day gives a pen's milk by day, each month gives a cow's
+tests.
+
 ## Other apps
 
 | Where | How |
