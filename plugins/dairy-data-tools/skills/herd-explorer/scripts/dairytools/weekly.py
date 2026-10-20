@@ -112,7 +112,7 @@ def components(herd: Herd) -> dict:
             g = [c for c in cows if lo <= c["days_in_milk"] <= hi and ("1" if c.get("lactation") == 1 else "2+") == parity]
             if not g:
                 continue
-            rows.append({"dim": f"{lo}-{hi if hi < 999 else '+'}", "parity": parity, "cows": len(g),
+            rows.append({"dim": f"{lo}-{hi}" if hi < 999 else f"over {lo - 1}", "parity": parity, "cows": len(g),
                          "milk_lb": mean(c["test_milk"] for c in g), "fat_pct": mean(c["test_fat_pct"] for c in g),
                          "protein_pct": mean(c["test_protein_pct"] for c in g),
                          "fat_protein": mean(c["test_fat_pct"] / c["test_protein_pct"] for c in g)})

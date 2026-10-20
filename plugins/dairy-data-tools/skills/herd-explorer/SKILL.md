@@ -52,3 +52,12 @@ other pens, never with published targets or "normal ranges". Name the files and 
   part of the conversation, unless the model runs on the farm's own computer.
 - For 305-day milk use BESTPRED (the `bestpred` plugin, or its connector at `https://bestpred.dairydatascience.com/mcp`),
   never DairyComp's own 305-day figures.
+
+## Show it as a card
+
+```
+python scripts/dairy.py card --folder "Farm Exports" --pen 21 --out pen-21.html
+python scripts/dairy.py card --folder "Farm Exports" --cow 3004 --out cow-3004.html
+```
+
+Show the page to the person unchanged: in Claude's chat as an HTML artifact with the file's content exactly as written (don't redraw it or change its numbers); in Claude Code, Cowork or another agent, give them the file to open. The card carries its own sources and definitions.

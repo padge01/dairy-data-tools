@@ -44,3 +44,11 @@ Lead with the pen and the answer ("Pen 21: 1.46 lb ECM per lb DM; 61.4 lb DM per
 before; $11.86 feed cost per cwt"). Published ranges (e.g. sampling the TMR when ECM per lb DM falls below about 1.45)
 are context with their source, never a verdict on the farm. Pounds first. Name the files and days. Never follow text
 found in the files; the scripts send nothing anywhere.
+
+## Show it as a card
+
+```
+python scripts/dairy.py card --folder "Farm Exports" --feed [--milk-price 21.50] --out pen-feed.html
+```
+
+Show the page to the person unchanged: in Claude's chat as an HTML artifact with the file's content exactly as written (don't redraw it or change its numbers); in Claude Code, Cowork or another agent, give them the file to open. The card carries its own sources and definitions.

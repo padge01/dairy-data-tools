@@ -18,7 +18,7 @@
   python dairy.py repro     --folder F [--vwp 50]              21-day pregnancy rate, conception by service
   python dairy.py exits     --folder F                         who left, and when
   python dairy.py weekly    --folder F [--milk-price 21.5]     all of it, for a visit
-  python dairy.py card      --folder F --pen 21 | --cow 3004 [--out FILE]   a pen or cow card, one HTML page
+  python dairy.py card      --folder F --pen 21 | --cow 3004 | --feed | --weekly [--actions FILE] [--out FILE]
 
 Add --json FILE to any of them for every figure (cards are drawn from it). Read-only: the folder is never changed and
 nothing is sent anywhere. Python 3.10 or later, standard library only.
@@ -33,7 +33,7 @@ from datetime import date
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from dairytools import cards, commands, cowcard, explorer, feeding, io, weekly  # noqa: E402
+from dairytools import cards, commands, cowcard, explorer, feeding, io, weekly, weeklycard  # noqa: E402
 from dairytools.herd import load  # noqa: E402
 
 
@@ -149,6 +149,9 @@ def main(argv=None):
     p.add_argument("--as-of", help="YYYY-MM-DD: count to this day instead of the last event")
     p.add_argument("--json")
     p.add_argument("--out", help="for card: the HTML file to write")
+    p.add_argument("--feed", action="store_true", help="for card: the pen feed card")
+    p.add_argument("--weekly", action="store_true", help="for card: the visit review page")
+    p.add_argument("--actions", help="for card --weekly: a text file, one action a line: what to check | who")
     a = p.parse_args(argv)
     cmd = a.command
 
@@ -204,7 +207,19 @@ def main(argv=None):
         out = weekly.weekly(herd(), a.milk_price)
     elif cmd == "card":
         h = herd()
-        if a.cow:
+        if a.weekly:
+            acts = []
+            if a.actions:
+                for line in Path(a.actions).read_text(encoding="utf-8").splitlines():
+                    if line.strip():
+                        what, _, who = line.partition("|")
+                        acts.append((what.strip(), who.strip()))
+            page = weeklycard.weekly_html(h, a.milk_price, acts)
+            target, what = Path(a.out or "visit-review.html"), "the visit review"
+        elif a.feed:
+            page = weeklycard.pen_feed_html(h, a.milk_price, a.days or 7)
+            target, what = Path(a.out or "pen-feed.html"), "the pen feed card"
+        elif a.cow:
             page = cowcard.cow_card_html(h, a.cow)
             target, what = Path(a.out or f"cow-{a.cow}-card.html"), f"cow {a.cow}'s card"
         elif a.pen:
@@ -212,7 +227,7 @@ def main(argv=None):
             page = cards.pen_card_html(h, a.pen, io.read_pen_milk(milk_files[0]) if milk_files else None)
             target, what = Path(a.out or f"pen-{a.pen}-card.html"), f"pen {a.pen}'s card"
         else:
-            raise SystemExit("Give --pen or --cow for the card.")
+            raise SystemExit("Give --pen, --cow, --feed or --weekly for the card.")
         target.write_text(page, encoding="utf-8")
         print(f"Wrote {target} ({what}). Show it as an artifact, or open it in a browser.")
         return

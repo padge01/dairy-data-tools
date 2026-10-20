@@ -319,3 +319,17 @@ def test_cow_card_draws_from_the_sample_herd(tmp_path):
     page = (tmp_path / "cow.html").read_text(encoding="utf-8")
     assert "<h1>Cow 3004</h1>" in page and "Pregnant" in page and "Due" in page and "DIM" in page
     assert "http" not in page.split("</style>")[1]
+
+
+def test_pen_feed_card_and_visit_page_draw(tmp_path):
+    code, out = run(DAIRY, "card", "--folder", HERD, "--feed", "--milk-price", "21.5", "--out", tmp_path / "feed.html")
+    assert code == 0, out
+    page = (tmp_path / "feed.html").read_text(encoding="utf-8")
+    assert "Pen feed" in page and "IOFC at $21.50" in page
+    (tmp_path / "acts.txt").write_text("Check fibre and sorting | the feeder\n", encoding="utf-8")
+    code, out = run(DAIRY, "card", "--folder", HERD, "--weekly", "--actions", tmp_path / "acts.txt",
+                    "--out", tmp_path / "visit.html")
+    assert code == 0, out
+    page = (tmp_path / "visit.html").read_text(encoding="utf-8")
+    assert "Visit review" in page and "Check fibre and sorting" in page and "Fresh cows" in page
+    assert "http" not in page.split("</style>")[1]
