@@ -6,6 +6,10 @@ come from small, tested scripts, not from the AI's guesswork.
 
 By Pádraig Lucey, MVB, MPVM, Ph.D. ([Dairy Data Science](https://dairydatascience.com)).
 
+[![PyPI](https://img.shields.io/pypi/v/dairy-data-tools?style=flat-square)](https://pypi.org/project/dairy-data-tools/)
+[![DOI](https://img.shields.io/badge/DOI-10.5281%2Fzenodo.23493936-blue?style=flat-square)](https://doi.org/10.5281/zenodo.23493936)
+[![License](https://img.shields.io/badge/license-Apache--2.0-blue?style=flat-square)](LICENSE)
+
 ## Get it
 
 **In the Claude app** (desktop or claude.ai, a paid plan with code execution on): Customize > Plugins > Add marketplace >
@@ -83,7 +87,9 @@ Lab** (a free ration balancer).
 
 ## Cite it
 
-If it helps your work, please cite it: GitHub's "Cite this repository" button gives the reference (`CITATION.cff`).
+If it helps your work, please cite it: Lucey, P. (2026). *Dairy Data Tools* [software]. Zenodo.
+https://doi.org/10.5281/zenodo.23493936 (every version; 0.2.0 is https://doi.org/10.5281/zenodo.23493937). GitHub's
+"Cite this repository" button gives the same reference.
 
 ## Licence
 
