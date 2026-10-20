@@ -307,6 +307,19 @@ def read_ezfeed(path) -> dict | None:
     return {"kind": kind, "title": title, "table": table, "rows": data, "skipped": skipped}
 
 
+def read_pen_milk(path) -> dict:
+    """Pen milk by day (date, pen, milk_lb, fat_pct, protein_pct): {(pen, date): {milk_lb, fat_pct, protein_pct}}."""
+    rows = list(csv.DictReader(read_lines(path)))
+    out = {}
+    for r in rows:
+        r = {k.strip().lower(): (v or "").strip() for k, v in r.items() if k}
+        d = parse_dc_date(r.get("date"))
+        if d and r.get("pen"):
+            out[(r["pen"], d)] = {"milk_lb": number(r.get("milk_lb")), "fat_pct": number(r.get("fat_pct")),
+                                  "protein_pct": number(r.get("protein_pct"))}
+    return out
+
+
 # --- which file is which ---------------------------------------------------------------------------------------------
 
 def identify(path) -> dict:

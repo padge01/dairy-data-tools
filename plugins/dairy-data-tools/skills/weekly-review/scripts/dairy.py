@@ -18,6 +18,7 @@
   python dairy.py repro     --folder F [--vwp 50]              21-day pregnancy rate, conception by service
   python dairy.py exits     --folder F                         who left, and when
   python dairy.py weekly    --folder F [--milk-price 21.5]     all of it, for a visit
+  python dairy.py card      --folder F --pen 21 [--out FILE]   the pen card, a self-contained HTML page
 
 Add --json FILE to any of them for every figure (cards are drawn from it). Read-only: the folder is never changed and
 nothing is sent anywhere. Python 3.10 or later, standard library only.
@@ -32,7 +33,7 @@ from datetime import date
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from dairytools import commands, explorer, feeding, io, weekly  # noqa: E402
+from dairytools import cards, commands, explorer, feeding, io, weekly  # noqa: E402
 from dairytools.herd import load  # noqa: E402
 
 
@@ -147,6 +148,7 @@ def main(argv=None):
     p.add_argument("--years", type=int, default=3)
     p.add_argument("--as-of", help="YYYY-MM-DD: count to this day instead of the last event")
     p.add_argument("--json")
+    p.add_argument("--out", help="for card: the HTML file to write")
     a = p.parse_args(argv)
     cmd = a.command
 
@@ -200,6 +202,14 @@ def main(argv=None):
         out = weekly.exits(herd())
     elif cmd == "weekly":
         out = weekly.weekly(herd(), a.milk_price)
+    elif cmd == "card":
+        h = herd()
+        milk_files = [f["path"] for f in h.files if f["kind"] == "pen_milk"]
+        page = cards.pen_card_html(h, a.pen, io.read_pen_milk(milk_files[0]) if milk_files else None)
+        target = Path(a.out or f"pen-{a.pen}-card.html")
+        target.write_text(page, encoding="utf-8")
+        print(f"Wrote {target} (pen {a.pen}'s card). Show it as an artifact, or open it in a browser.")
+        return
     else:
         raise SystemExit(f"Unknown command '{cmd}'. Run with --help for the list.")
     if a.json:

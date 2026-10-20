@@ -302,3 +302,12 @@ def test_total_footer_and_duplicate_events_are_dropped(tmp_path):
                                     "1,01/01/22,2,BRED,60,09/01/26,7HO1\n", encoding="utf-8")
     events = dairyread.read_events(tmp_path / "e.csv")
     assert len(events) == 1 and events[0]["BDAT"] == "01/01/22"
+
+
+def test_pen_card_draws_from_the_sample_herd(tmp_path):
+    code, out = run(DAIRY, "card", "--folder", HERD, "--pen", "21", "--out", tmp_path / "pen21.html")
+    assert code == 0, out
+    page = (tmp_path / "pen21.html").read_text(encoding="utf-8")
+    assert "<h1>Pen 21</h1>" in page and "89.8" in page and "Ration change, Sep 28" in page
+    assert "http" not in page.split("</style>")[1]          # nothing fetched: self-contained
+    assert "IGNORE" not in page
