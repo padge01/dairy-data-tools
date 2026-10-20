@@ -17,10 +17,10 @@ from .herd import Herd
 from .stats import ecm_lb, mean, quantile
 
 CSS = """
-:root{--canvas:#fafaf9;--surface:#fff;--text:#0a0a0a;--text2:#626762;--text3:#6b726c;--border:#dedfdc;--subtle:#efefec;
+:root{--canvas:#fafaf9;--surface:#fff;--raised:#f0f2ef;--text:#0a0a0a;--text2:#626762;--text3:#6b726c;--border:#dedfdc;--subtle:#efefec;
 --line:#bfc3be;--bar:#cfd3ce;--ink:#0a0a0a;--l1:#c9a93a;--l2:#e08a2c;--l3:#9a6a43;--mark:#2b302c;
 --sans:'Inter Variable','Inter','Segoe UI',system-ui,sans-serif}
-@media (prefers-color-scheme:dark){:root{--canvas:#0d110f;--surface:#151a17;--text:#f1f4f2;--text2:#aab3ad;
+@media (prefers-color-scheme:dark){:root{--canvas:#0d110f;--surface:#151a17;--raised:#1d241f;--text:#f1f4f2;--text2:#aab3ad;
 --text3:#7d8a82;--border:#323b35;--subtle:#232b26;--line:#4a564e;--bar:#3a463f;--ink:#f1f4f2;--l1:#e6cf7a;--l2:#f0a24a;
 --l3:#c08a5c;--mark:#c9d1cb}}
 *{box-sizing:border-box}body{margin:0;background:var(--canvas);color:var(--text);font-family:var(--sans)}
@@ -36,6 +36,13 @@ font-weight:400;color:var(--text2);margin-left:6px}.n{font-size:14px;color:var(-
 .side{border:1px solid var(--border);border-radius:16px;padding:16px 18px;align-self:start}
 .side h2{font-size:16px;margin:0 0 8px;font-weight:650}.side p,.side li{font-size:15px;line-height:1.45;margin:0 0 8px}
 .side ul{padding-left:18px;margin:0 0 8px}
+.side h2{margin-top:14px}.side h2:first-child{margin-top:0}.sub{font-size:12.5px;color:var(--text3);margin:2px 0 6px}
+.chips{display:flex;flex-wrap:wrap;gap:6px}.chip2{display:inline-grid;padding:5px 10px;border-radius:10px;
+background:var(--raised)}.ck{font-size:12px;color:var(--text2)}.cv{font-size:16px;font-weight:650}
+.feedrow{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:4px 0;font-size:14px;
+border-bottom:1px solid var(--subtle)}.feedrow:last-child{border:0}.chip{padding:2px 9px;border-radius:999px;
+background:var(--raised);font-size:13px;font-weight:600;white-space:nowrap}.chip.new{outline:1.5px solid var(--line)}
+.chip.gone{text-decoration:line-through;color:var(--text2)}
 .foot{font-size:12.5px;color:var(--text3);border-top:1px solid var(--subtle);margin-top:12px;padding-top:8px}
 svg text{font-family:var(--sans);fill:var(--text2)}svg .lab{fill:var(--text)}
 @media (max-width:820px){.tiles{grid-template-columns:repeat(2,1fr)}.body{grid-template-columns:1fr}.head h1{font-size:34px}}
@@ -44,6 +51,11 @@ svg text{font-family:var(--sans);fill:var(--text2)}svg .lab{fill:var(--text)}
 
 def esc(x) -> str:
     return html.escape(str(x))
+
+
+def chip(label, value) -> str:
+    """A small rounded tile: the label above, the figure below (words carry it; no colour needed)."""
+    return f"<span class='chip2'><span class='ck'>{esc(label)}</span><span class='cv'>{esc(value)}</span></span>"
 
 
 def _fmt_date(d: date) -> str:
@@ -270,8 +282,13 @@ def pen_card_html(herd: Herd, pen, pen_milk: dict | None = None, days: int = 75)
     side = []
     if changes:
         d, moved = changes[-1]
-        side.append(f"<h2>Ration change, {_fmt_date(d)}</h2><ul>" + "".join(
-            f"<li>{esc(k)}: {a:.1f} → {b:.1f} lb DM</li>" for k, a, b in moved) + "</ul>")
+        rows_html = "".join(
+            f"<div class='feedrow'><span>{esc(k)}</span>"
+            + (f"<span class='chip new'>new · {b:.1f} lb</span>" if a < .05 else
+               f"<span class='chip gone'>off · was {a:.1f} lb</span>" if b < .05 else
+               f"<span class='chip'>{a:.1f} → {b:.1f} lb</span>") + "</div>"
+            for k, a, b in moved)
+        side.append(f"<h2>Ration change, {_fmt_date(d)}</h2><div class='sub'>lb of dry matter per cow</div>{rows_html}")
     if pen_milk and change:
         def wk(year_shift, a, b):
             vals = []
@@ -287,14 +304,19 @@ def pen_card_html(herd: Herd, pen, pen_milk: dict | None = None, days: int = 75)
         now = wk(0, *after) - wk(0, *before) if wk(0, *after) and wk(0, *before) else None
         then = wk(-1, *after) - wk(-1, *before) if wk(-1, *after) and wk(-1, *before) else None
         if now is not None and then is not None:
-            side.append(f"<h2>ECM since {_fmt_date(change)}</h2><p>Up {now:.1f} lb per cow (the week before against "
-                        f"the week to {_fmt_date(end)}). The same weeks last fall, with no change: up {then:.1f} lb.</p>")
+            side.append(f"<h2>ECM since {_fmt_date(change)}</h2><div class='chips'>"
+                        f"{chip('This fall', f'{now:+.1f} lb')}{chip('Last fall, no change', f'{then:+.1f} lb')}</div>"
+                        f"<div class='sub'>The week before against the week to {_fmt_date(end)}, per cow</div>")
     if pc["health"]:
-        side.append(f"<h2>Health, last {pc['days']} days</h2><p>" + ", ".join(
-            f"{h['event']} {h['cows']}" for h in pc["health"]) + " (cows in the pen now).</p>")
+        side.append(f"<h2>Health, last {pc['days']} days</h2><div class='chips'>" + "".join(
+            chip(h["event"].capitalize(), f"{h['cows']} cow{'s' if h['cows'] != 1 else ''}") for h in pc["health"])
+            + "</div><div class='sub'>Cows in the pen now</div>")
     if feed and feed.get("ecm_per_lb_dm"):
-        side.append(f"<h2>Feed, last 7 days</h2><p>{feed['ecm_per_lb_dm']:.2f} lb ECM per lb DM; feed "
-                    f"${feed['feed_cost_per_cow']:.2f} per cow, ${feed['feed_cost_per_cwt']:.2f} per cwt.</p>")
+        efficiency = format(feed["ecm_per_lb_dm"], ".2f")
+        per_cow = "$" + format(feed["feed_cost_per_cow"], ".2f")
+        per_cwt = "$" + format(feed["feed_cost_per_cwt"], ".2f") if feed.get("feed_cost_per_cwt") else "n/a"
+        side.append("<h2>Feed, last 7 days</h2><div class='chips'>" + chip("ECM per lb DM", efficiency)
+                    + chip("Feed per cow", per_cow) + chip("Feed per cwt", per_cwt) + "</div>")
     kinds = {f["kind"] for f in herd.files}
     sources = ["DairyComp's cow, test and event reports" if "events" in kinds else "DairyComp's cow report"]
     if "feed" in kinds:

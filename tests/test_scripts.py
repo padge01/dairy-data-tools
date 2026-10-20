@@ -311,3 +311,11 @@ def test_pen_card_draws_from_the_sample_herd(tmp_path):
     assert "<h1>Pen 21</h1>" in page and "89.8" in page and "Ration change, Sep 28" in page
     assert "http" not in page.split("</style>")[1]          # nothing fetched: self-contained
     assert "IGNORE" not in page
+
+
+def test_cow_card_draws_from_the_sample_herd(tmp_path):
+    code, out = run(DAIRY, "card", "--folder", HERD, "--cow", "3004", "--out", tmp_path / "cow.html")
+    assert code == 0, out
+    page = (tmp_path / "cow.html").read_text(encoding="utf-8")
+    assert "<h1>Cow 3004</h1>" in page and "Pregnant" in page and "Due" in page and "DIM" in page
+    assert "http" not in page.split("</style>")[1]
