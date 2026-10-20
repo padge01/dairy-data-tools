@@ -91,11 +91,13 @@ Ask in plain words; the right skill picks itself. No commands to learn.
 | pen-feed | "What's pen 21's feed efficiency and IOFC?" "Is the feed loaded as called for?" | Each pen's cows joined to its feed: intake per cow, ECM per lb DM, cost per cwt, IOFC, NASEM's predicted intake; loading accuracy, refusals, consistency |
 | weekly-review | "Get me ready for Thursday's visit." "How are the fresh cows doing?" | Fresh cows, components and MUN, udder health, reproduction, who left, the pens' feed, and actions for the next visit |
 | ration-change | "Did pen 21's ration change work?" | The weeks before against the weeks after, with the same weeks last year or another pen taken out |
+| balance-ration | "Balance pen 21's ration" | Runs the free Dairy Ration Lab when it's connected; this kit never makes up a ration |
 
 **A sample herd** (`sample-herd/`): a made-up California dairy's exports, to try every skill before using a real farm's.
 
-**Also from Dairy Data Science:** **BESTPRED**, USDA's best prediction of 305-day and mature-equivalent milk, in this
-marketplace and at `https://bestpred.dairydatascience.com/mcp`.
+**Also from Dairy Data Science:** the **Dairy Ration Lab**, a free ration balancer, at https://lab.dairydatascience.com
+(for agents: `https://mcp.dairydatascience.com`, sign in with Google), and **BESTPRED**, USDA's best prediction of
+305-day and mature-equivalent milk, in this marketplace and at `https://bestpred.dairydatascience.com/mcp`.
 
 ## What it does with your files
 
