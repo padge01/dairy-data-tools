@@ -33,9 +33,11 @@ padding:22px 30px 18px}
 .k{font-size:15px;color:var(--text2)}.v{font-size:28px;font-weight:650;margin:2px 0}.v small{font-size:15px;
 font-weight:400;color:var(--text2);margin-left:6px}.n{font-size:14px;color:var(--text3)}
 .body{display:grid;grid-template-columns:1fr 330px;gap:26px;padding-top:12px}
-.side{border:1px solid var(--border);border-radius:16px;padding:16px 18px;align-self:start}
+.side{border:1px solid var(--border);border-radius:16px;padding:16px 18px;align-self:stretch}
 .side h2{font-size:16px;margin:0 0 8px;font-weight:650}.side p,.side li{font-size:15px;line-height:1.45;margin:0 0 8px}
 .side ul{padding-left:18px;margin:0 0 8px}
+.left{display:flex;flex-direction:column}.below{margin-top:18px;flex:1;display:flex}.below .side{flex:1;display:flex;flex-direction:column;justify-content:center}
+.figs{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin:6px 0 4px}.figs .v{font-size:32px}
 .side h2{margin-top:14px}.side h2:first-child{margin-top:0}.sub{font-size:12.5px;color:var(--text3);margin:2px 0 6px}
 .chips{display:flex;flex-wrap:wrap;gap:6px}.chip2{display:inline-grid;padding:5px 10px;border-radius:10px;
 background:var(--raised)}.ck{font-size:12px;color:var(--text2)}.cv{font-size:16px;font-weight:650}
@@ -45,7 +47,10 @@ background:var(--raised);font-size:13px;font-weight:600;white-space:nowrap}.chip
 .chip.gone{text-decoration:line-through;color:var(--text2)}
 .foot{font-size:12.5px;color:var(--text3);border-top:1px solid var(--subtle);margin-top:12px;padding-top:8px}
 svg text{font-family:var(--sans);fill:var(--text2)}svg .lab{fill:var(--text)}
-@media (max-width:820px){.tiles{grid-template-columns:repeat(2,1fr)}.body{grid-template-columns:1fr}.head h1{font-size:34px}}
+.body>*,.tiles>*,.figs>*{min-width:0}
+@media (max-width:1060px){.body{grid-template-columns:1fr}}
+@media (max-width:820px){.tiles{grid-template-columns:repeat(2,1fr)}.head h1{font-size:34px}
+.card{margin:8px;padding:16px}.figs .v{font-size:24px}}
 """
 
 
@@ -157,6 +162,7 @@ def time_chart(rows, change: date | None, start: date, end: date, width=760) -> 
             v = lo + (hi - lo) * (t + .5) / 4
             out.append(f'<line x1="{pad_l}" x2="{width - pad_r}" y1="{y(v):.1f}" y2="{y(v):.1f}" stroke="var(--subtle)"/>'
                        f'<text x="{pad_l - 6}" y="{y(v) + 4:.1f}" font-size="11" text-anchor="end">{v:.0f}</text>')
+        ends = []
         for label, style, s in lines:
             s = [(d, v) for d, v in s if v is not None and start <= d <= end]
             if len(s) < 2:
@@ -168,8 +174,13 @@ def time_chart(rows, change: date | None, start: date, end: date, width=760) -> 
             out.append(f'<polyline points="{pts}" fill="none" stroke="{colour}" stroke-width="{w}"{dash}/>')
             if style != "thin":
                 d, v = s[-1]
-                out.append(f'<text x="{x(d) + 6:.1f}" y="{y(v) + 4:.1f}" font-size="12.5" class="lab">'
-                           f'<tspan font-weight="650">{v:.1f}</tspan> {esc(label)}</text>')
+                ends.append([y(v) + 4, x(d) + 6, f'<tspan font-weight="650">{v:.1f}</tspan> {esc(label)}'])
+        # End labels never overlap: each sits at least 15 px below the one above it.
+        ends.sort()
+        for i in range(1, len(ends)):
+            ends[i][0] = max(ends[i][0], ends[i - 1][0] + 15)
+        for ly, lx, text in ends:
+            out.append(f'<text x="{lx:.1f}" y="{ly:.1f}" font-size="12.5" class="lab">{text}</text>')
     if change and start <= change <= end:
         cx = x(change)
         out.append(f'<line x1="{cx:.1f}" x2="{cx:.1f}" y1="10" y2="{height - 26}" stroke="var(--ink)" '
@@ -315,16 +326,25 @@ def pen_card_html(herd: Herd, pen, pen_milk: dict | None = None, days: int = 75)
             side.append(f"<h2>ECM since {_fmt_date(change)}</h2><div class='chips'>"
                         f"{chip('This fall', f'{now:+.1f} lb')}{chip('Last fall, no change', f'{then:+.1f} lb')}</div>"
                         f"<div class='sub'>The week before against the week to {_fmt_date(end)}, per cow</div>")
+    # Feed goes under the charts when the ration change fills the side, so both columns end together.
+    below = []
     if pc["health"]:
         side.append(f"<h2>Health, last {pc['days']} days</h2><div class='chips'>" + "".join(
             chip(h["event"].capitalize(), f"{h['cows']} cow{'s' if h['cows'] != 1 else ''}") for h in pc["health"])
             + "</div><div class='sub'>Cows in the pen now</div>")
     if feed and feed.get("ecm_per_lb_dm"):
         efficiency = format(feed["ecm_per_lb_dm"], ".2f")
-        per_cow = "$" + format(feed["feed_cost_per_cow"], ".2f")
+        per_cow = "$" + format(feed["feed_cost_per_cow"], ".2f") if feed.get("feed_cost_per_cow") is not None else "n/a"
         per_cwt = "$" + format(feed["feed_cost_per_cwt"], ".2f") if feed.get("feed_cost_per_cwt") else "n/a"
-        side.append("<h2>Feed, last 7 days</h2><div class='chips'>" + chip("ECM per lb DM", efficiency)
-                    + chip("Feed per cow", per_cow) + chip("Feed per cwt", per_cwt) + "</div>")
+        figures = (("ECM per lb DM", efficiency), ("Feed per cow", per_cow), ("Feed per cwt", per_cwt))
+        if changes:   # under the charts: big figures, like the tiles, filling the box
+            below.append("<h2>Feed, last 7 days</h2><div class='figs'>" + "".join(
+                f"<div><div class='k'>{esc(k)}</div><div class='v'>{esc(v)}</div></div>" for k, v in figures)
+                + "</div><div class='sub'>Delivered feed, per cow in the pen</div>")
+        else:         # no ration change: feed joins the side, as chips
+            side.append("<h2>Feed, last 7 days</h2><div class='chips'>" + "".join(chip(k, v) for k, v in figures)
+                        + "</div>")
+    below_html = ("<div class='below'>" + "".join(f"<div class='side'>{b}</div>" for b in below) + "</div>") if below else ""
     kinds = {f["kind"] for f in herd.files}
     sources = ["DairyComp's cow, test and event reports" if "events" in kinds else "DairyComp's cow report"]
     if "feed" in kinds:
@@ -337,7 +357,7 @@ def pen_card_html(herd: Herd, pen, pen_milk: dict | None = None, days: int = 75)
             f"content='width=device-width,initial-scale=1'><title>Pen {esc(pen)}</title><style>{CSS}</style></head>"
             f"<body><div class='card'><div class='head'><h1>Pen {esc(pen)}</h1><span>{len(cows)} cows · {kind} · "
             f"{_fmt_date(start)} to {_fmt_date(end)}</span></div><div class='tiles'>{tile_html}</div>"
-            f"<div class='body'><div>{chart}</div><div class='side'>{''.join(side) or '<p>No changes recorded.</p>'}"
+            f"<div class='body'><div class='left'>{chart}{below_html}</div><div class='side'>{''.join(side) or '<p>No changes recorded.</p>'}"
             f"</div></div><div class='foot'>From {esc(files)}. Records end {end:%b %d, %Y}. ECM = 0.327 × milk + "
             f"12.95 × fat lb + 7.65 × protein lb, worked out here. Intake is delivered, per DairyComp head.</div></div>"
             f"</body></html>")
