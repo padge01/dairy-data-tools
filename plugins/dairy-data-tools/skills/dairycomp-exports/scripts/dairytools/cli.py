@@ -24,7 +24,7 @@
 Add --json FILE to any of them for every figure (cards are drawn from it). Read-only: the folder is never changed and
 nothing is sent anywhere. Python 3.10 or later, standard library only.
 
-Installed with pip (pip install dairy-data-tools), the same commands run as `dairy-data-tools herd --folder F`.
+As the dairy-data-tools package from PyPI, the same commands run as `dairy-data-tools herd --folder F`.
 """
 
 from __future__ import annotations

@@ -1,5 +1,6 @@
 """Copy the shared code into each skill (in Claude's chat only a skill's own folder reaches the code sandbox), and
-write the repository's README from the plugin's.
+write the repository's README from the plugin's. The npx and pip commands are in the repository's README only: the plugin
+directory's policy check stops a plugin whose own files show commands that download code.
 
 - tools/dairy.py and tools/dairytools/ go into every skill that runs them (DAIRY_SKILLS).
 - tools/dairyread.py, ration_change.py and pen_milk.py go into ration-change.
@@ -30,6 +31,13 @@ for name in DAIRYREAD_SKILLS:
 
 # The repository's README is the plugin's, plus how the repository is laid out.
 DEVELOPERS = """
+## From the command line
+
+| Where | Command |
+| --- | --- |
+| **Codex, Cursor, Gemini CLI** and other apps that read Agent Skills | `npx skills add padge01/dairy-data-tools` |
+| **Python, no AI** | `pip install dairy-data-tools` |
+
 ## Working on it
 
 - `plugins/dairy-data-tools/`: the plugin people install (skills, sample herd, README, licences).

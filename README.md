@@ -76,8 +76,10 @@ Save the exports every day or every month and the cards join them into each pen'
 | Where | How |
 | --- | --- |
 | **Claude Code** | `claude plugin marketplace add padge01/dairy-data-tools`, then `claude plugin install dairy-data-tools@dairy-data-tools` |
-| **Codex, Cursor, Gemini CLI** and other apps that read Agent Skills | `npx skills add padge01/dairy-data-tools` |
-| **Python, no AI** (Python 3.10 or later, nothing else to install) | `pip install dairy-data-tools`, then `dairy-data-tools pen --folder "Farm Exports" --pen 21`; `dairy-data-tools --help` lists every question |
+| **Codex, Cursor, Gemini CLI** and other apps that read Agent Skills | Add the skills in this repository the way your app adds Agent Skills |
+| **Python, no AI** (Python 3.10 or later, nothing else needed) | The same code is the [dairy-data-tools package on PyPI](https://pypi.org/project/dairy-data-tools/). With it on your computer: `dairy-data-tools pen --folder "Farm Exports" --pen 21`; `dairy-data-tools --help` lists every question |
+
+The commands for the last two are in [the repository's README](https://github.com/padge01/dairy-data-tools#from-the-command-line).
 
 ## What's in it
 
@@ -128,6 +130,13 @@ https://doi.org/10.5281/zenodo.23493936. GitHub's "Cite this repository" button 
 Code under Apache-2.0 (`LICENSE`); the skills' text under CC BY 4.0 (`LICENSE-skills.md`). The NASEM (2021) feed values
 keep NASEM's own terms (see `NOTICE`). Questions and fixes:
 [issues](https://github.com/padge01/dairy-data-tools/issues).
+
+## From the command line
+
+| Where | Command |
+| --- | --- |
+| **Codex, Cursor, Gemini CLI** and other apps that read Agent Skills | `npx skills add padge01/dairy-data-tools` |
+| **Python, no AI** | `pip install dairy-data-tools` |
 
 ## Working on it
 
