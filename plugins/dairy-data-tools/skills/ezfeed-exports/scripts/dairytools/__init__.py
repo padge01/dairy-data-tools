@@ -46,7 +46,7 @@ from .repro import (
 )
 from .udder import mastitis_incidence, scc_dynamics, scc_screen
 
-__version__ = "0.2.5"
+__version__ = "0.3.0"
 
 __all__ = [
     "__version__",
