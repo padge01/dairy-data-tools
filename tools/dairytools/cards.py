@@ -366,13 +366,28 @@ def pen_panels(start: date, end: date, change: date | None = None, band=(), line
             out.append(f'<line x1="{pad_l}" x2="{width - pad_r}" y1="{y(v):.1f}" y2="{y(v):.1f}" stroke="var(--subtle)"/>'
                        f'<text x="{pad_l - 6}" y="{y(v) + 4:.1f}" font-size="11" text-anchor="end">{v}</text>')
             v += step
+        stack = []
         if shares:
             last_share = None
-            stack = []
             for d, total in smooth:
                 last_share = shares.get(d, last_share)
-                stack.append((d, total, last_share))
-            stack = [(d, tot, sh) for d, tot, sh in stack if sh]
+                if last_share:
+                    stack.append((d, total, last_share))
+        if stack:
+            # Earlier days with total DM fed but no ingredient records: draw as the warm total-DM
+            # area up to the seam day so there is never an empty gap before ingredient records start.
+            first_sh = stack[0][0]
+            pre = [p for p in smooth if p[0] <= first_sh]
+            if len(pre) >= 2:
+                pts_pre = " ".join(f"{x(d):.1f},{y(v):.1f}" for d, v in pre)
+                out.append(f'<polygon points="{x(pre[0][0]):.1f},{y(0):.1f} {pts_pre} {x(pre[-1][0]):.1f},{y(0):.1f}" '
+                           f'fill="var(--feedwash)"/><polyline points="{pts_pre}" fill="none" stroke="var(--feed)" stroke-width="1.6"/>')
+                bx = x(first_sh)
+                out.append(f'<line x1="{bx:.1f}" x2="{bx:.1f}" y1="{y0:.1f}" y2="{y(0):.1f}" '
+                           f'stroke="var(--line)" stroke-dasharray="2 3"/>')
+                if not (change and abs((change - first_sh).days) < 10):
+                    out.append(f'<text x="{bx - 5:.1f}" y="{y0 + 11:.1f}" font-size="10.5" '
+                               f'text-anchor="end">Total DM only before {_fmt_date(first_sh)}</text>')
             base = {d: 0.0 for d, _, _ in stack}
             ends = []
             for key, label in LAYERS:
@@ -387,7 +402,7 @@ def pen_panels(start: date, end: date, change: date | None = None, band=(), line
                 for d, tot, sh in stack:
                     base[d] += tot * sh.get(key, 0)
             out.append(ends_text(ends))
-        else:
+        elif smooth:
             pts = " ".join(f"{x(d):.1f},{y(v):.1f}" for d, v in smooth)
             out.append(f'<polygon points="{x(smooth[0][0]):.1f},{y(0):.1f} {pts} {x(smooth[-1][0]):.1f},{y(0):.1f}" '
                        f'fill="var(--feedwash)"/><polyline points="{pts}" fill="none" stroke="var(--feed)" stroke-width="1.6"/>'
