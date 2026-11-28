@@ -11,7 +11,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 PLUGIN = ROOT / "plugins" / "dairy-data-tools"
-DAIRY_SKILLS = ["dairycomp-exports", "ezfeed-exports", "herd-explorer", "pen-feed", "weekly-review"]
+DAIRY_SKILLS = ["balance-ration", "dairycomp-exports", "ezfeed-exports", "herd-explorer", "pen-feed", "weekly-review"]
 DAIRYREAD_SKILLS = ["ration-change"]
 
 for name in DAIRY_SKILLS:
@@ -21,13 +21,17 @@ for name in DAIRY_SKILLS:
     target = scripts / "dairytools"
     if target.exists():
         shutil.rmtree(target)
-    shutil.copytree(ROOT / "tools" / "dairytools", target, ignore=shutil.ignore_patterns("__pycache__"))
+    shutil.copytree(ROOT / "tools" / "dairytools", target, ignore=shutil.ignore_patterns("__pycache__", "py.typed"))
     print("copied dairy.py and dairytools to", scripts.relative_to(ROOT))
 for name in DAIRYREAD_SKILLS:
     scripts = PLUGIN / "skills" / name / "scripts"
     for script in ("dairyread.py", "ration_change.py", "pen_milk.py"):
         shutil.copyfile(ROOT / "tools" / script, scripts / script)
-    print("copied dairyread.py, ration_change.py and pen_milk.py to", scripts.relative_to(ROOT))
+    target = scripts / "dairytools"
+    if target.exists():
+        shutil.rmtree(target)
+    shutil.copytree(ROOT / "tools" / "dairytools", target, ignore=shutil.ignore_patterns("__pycache__", "py.typed"))
+    print("copied dairyread.py, ration_change.py, pen_milk.py and dairytools to", scripts.relative_to(ROOT))
 
 # The repository's README is the plugin's, plus how the repository is laid out.
 DEVELOPERS = """

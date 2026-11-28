@@ -24,6 +24,34 @@ python scripts/dairy.py exits      --folder "Farm Exports"
 
 `weekly` runs all of them, plus the pens and, with EZfeed's reports, pen feed and loading (see the pen-feed skill).
 
+### Deeper checks (when asked about a specific area)
+
+```
+python scripts/dairy.py scc-screen        --folder "Farm Exports" [--by none|parity|pen] [--fresh-dim 40]
+python scripts/dairy.py scc-dynamics      --folder "Farm Exports" [--by none|parity]
+python scripts/dairy.py mastitis          --folder "Farm Exports" [--by month|none] [--first-only] [--months 12]
+python scripts/dairy.py pregnancy-rate    --folder "Farm Exports" [--vwp 50] [--by none|parity] [--cycles]
+python scripts/dairy.py pregnant-by       --folder "Farm Exports" [--by parity|lactation_group|calving_year|none]
+python scripts/dairy.py first-service     --folder "Farm Exports" [--vwp 50] [--by parity|none]
+python scripts/dairy.py time-to-pregnancy --folder "Farm Exports" [--by parity|none]
+python scripts/dairy.py pregnancy-loss    --folder "Farm Exports" [--by parity|none] [--followed-days 60]
+python scripts/dairy.py calving-interval  --folder "Farm Exports" [--by parity|none]
+python scripts/dairy.py age-first-calving --folder "Farm Exports" [--by calving_year|none]
+python scripts/dairy.py conception        --folder "Farm Exports" [--by service|month|dim_band|parity|breeding_code|technician|sire]
+python scripts/dairy.py inter-service     --folder "Farm Exports" [--by none|parity]
+python scripts/dairy.py heifer-repro      --folder "Farm Exports" [--by none|breeding_month]
+python scripts/dairy.py dry-period        --folder "Farm Exports" [--by none|parity]
+python scripts/dairy.py calving           --folder "Farm Exports" [--by none|parity]
+python scripts/dairy.py disease-effects   --folder "Farm Exports" --event metritis [--within-dim 30] [--removal-dim 60]
+python scripts/dairy.py risk-ratio        --folder "Farm Exports" --outcome metritis --exposure retained_placenta
+python scripts/dairy.py mh-rr             --folder "Farm Exports" --outcome metritis --exposure retained_placenta
+python scripts/dairy.py left-reasons      --folder "Farm Exports" [--by reason|parity|lactation_group|dim_band]
+python scripts/dairy.py left-herd         --folder "Farm Exports" [--within-dim 60] [--by parity|none]
+python scripts/dairy.py survival          --folder "Farm Exports" [--by parity|none]
+python scripts/dairy.py event-months      --folder "Farm Exports" --event metritis
+python scripts/dairy.py audit             --folder "Farm Exports"
+```
+
 ## What the figures are (each result repeats its own definition)
 
 - **Fresh cows**: first case per lactation within 30 days in milk (ketosis 21), among lactations observed from

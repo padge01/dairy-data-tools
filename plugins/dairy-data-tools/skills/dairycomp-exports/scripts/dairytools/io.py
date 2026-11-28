@@ -1,5 +1,9 @@
 """Reading the files: DairyComp reports, the item list, and EZfeed's reports. Files are recognised by what is in
-them, so people can name them however they like."""
+them, so people can name them however they like.
+
+Single canonical reader for both `dairytools` and the standalone `dairyread` facade (`ration_change.py`,
+`pen_milk.py`). Python standard library only.
+"""
 
 from __future__ import annotations
 
@@ -9,35 +13,53 @@ import re
 from datetime import date, datetime
 from pathlib import Path
 
+from .errors import FolderNotFoundError
+
+ENCODINGS = ("utf-8-sig", "cp1252")
+
+_NUMBER_RE = re.compile(r"^-?(?:\d{1,3}(?:,\d{3})+|\d+)(?:\.\d+)?$|^-?\.\d+$")
+_POST_REMARK_COLS = ("R", "T", "B", "PROTOCOLS", "TECHNICIAN")
+
 
 # --- text ------------------------------------------------------------------------------------------------------------
 
-def read_lines(path) -> list[str]:
-    """A file's lines, UTF-8 (with or without a byte-order mark) or Windows-1252, as DairyComp and EZfeed write."""
+def read_text(path: str | Path) -> str:
+    """A file's text, UTF-8 (with or without a byte-order mark) or Windows-1252, as DairyComp and EZfeed write."""
     raw = Path(path).read_bytes()
     if raw.startswith(b"\xef\xbb\xbf"):
         raw = raw[3:]
     try:
-        text = raw.decode("utf-8")
+        return raw.decode("utf-8")
     except UnicodeDecodeError:
-        text = raw.decode("cp1252", errors="replace")
-    return text.splitlines()
+        return raw.decode("cp1252", errors="replace")
+
+
+def read_lines(path: str | Path) -> list[str]:
+    """A file's lines, decoded with `read_text`."""
+    return read_text(path).splitlines()
 
 
 def split_csv(line: str) -> list[str]:
     return next(csv.reader(io.StringIO(line)), [])
 
 
+def rows_of(path: str | Path) -> list[list[str]]:
+    """All CSV rows from a file, with every cell stripped of surrounding whitespace."""
+    return [[cell.strip() for cell in row] for row in csv.reader(io.StringIO(read_text(path)))]
+
+
 def parse_dc_date(text, today: date | None = None) -> date | None:
-    """DairyComp's MM/DD/YY (a two-digit year in the future is last century), MM/DD/YYYY, or YYYY-MM-DD."""
+    """DairyComp's MM/DD/YY (a two-digit year in the future is last century), MM/DD/YYYY, YYYY-MM-DD, or ISO timestamp."""
     if text is None:
         return None
+    if isinstance(text, datetime):
+        return text.date()
     if isinstance(text, date):
         return text
     s = str(text).strip()
     if not s:
         return None
-    m = re.fullmatch(r"(\d{4})-(\d{1,2})-(\d{1,2})", s)
+    m = re.match(r"^(\d{4})-(\d{1,2})-(\d{1,2})(?:$|[\sT]\d{2}:\d{2})", s)
     if m:
         try:
             return date(int(m[1]), int(m[2]), int(m[3]))
@@ -61,60 +83,88 @@ def number(text) -> float | None:
     """'1,234.5', '$6.84', '57.94%', '(1.20)' (EZfeed's negatives), ' 77.1 ' -> float; blank or text -> None."""
     if text is None:
         return None
-    if isinstance(text, (int, float)):
+    if isinstance(text, (int, float)) and not isinstance(text, bool):
         return float(text)
-    s = str(text).strip().replace("$", "").replace(",", "").replace("%", "")
+    s = str(text).strip().replace("$", "").replace("%", "")
     negative = s.startswith("(") and s.endswith(")")
-    s = s.strip("()")
-    if not re.fullmatch(r"-?\d+(\.\d+)?|-?\.\d+", s):
+    if negative:
+        s = s[1:-1].strip()
+        if s.startswith("-"):  # reject double-negated '(-1.2)'
+            return None
+    if not _NUMBER_RE.fullmatch(s):
         return None
-    return -float(s) if negative else float(s)
+    val = float(s.replace(",", ""))
+    return -val if negative else val
 
 
 # --- DairyComp -------------------------------------------------------------------------------------------------------
 
-def read_dc_export(path) -> list[dict[str, str | None]]:
+def read_dc_export(path: str | Path) -> list[dict[str, str | None]]:
     """A DairyComp report saved as CSV (SHOW, EVENTS, FILEOUT or the item list): one dict per row, keyed by the
     upper-cased column name. Handles Windows-1252 text, the trailing comma's empty column, padded values, '-' for a
-    missing value and the 'Total:' footer."""
-    lines = [l for l in read_lines(path) if l.strip() and not re.match(r"^\s*Total:", l)]
+    missing value, the 'Total:' footer, and stray unquoted commas inside a remark (which otherwise shift columns right)."""
+    lines = [l for l in read_lines(path) if l.strip() and not re.match(r"^\s*Total:", l, re.I)]
     if not lines:
         raise ValueError(f"{Path(path).name} is empty")
-    header = [h.strip().upper() for h in split_csv(lines[0])]
+    raw_header = [h.strip().upper() for h in split_csv(lines[0])]
     rows = [[c.strip() for c in split_csv(l)] for l in lines[1:]]
-    width = max([len(header)] + [len(r) for r in rows])
-    header += [""] * (width - len(header))
-    names, seen = [], {}
-    for h in header:
-        if h and h in seen:
+    width = max([len(raw_header)] + [len(r) for r in rows])
+    padded_header = raw_header + [""] * (width - len(raw_header))
+
+    # Give every blank header cell a unique synthetic name so a trailing comma never overwrites spilled cells.
+    names: list[str] = []
+    seen: dict[str, int] = {}
+    blank_names: list[str] = []
+    for idx, h in enumerate(padded_header):
+        if not h:
+            bname = f"_extra_{idx}"
+            names.append(bname)
+            blank_names.append(bname)
+        elif h in seen:
             seen[h] += 1
             names.append(f"{h}.{seen[h]}")
         else:
             seen[h] = 0
             names.append(h)
-    out = []
-    for r in rows:
-        r = r + [""] * (width - len(r))
-        out.append({n: (None if v in ("", "-", "NA") else v) for n, v in zip(names, r)})
-    # The trailing comma leaves an unnamed column with nothing in it.
-    empty = [n for n in names if n == "" and all(row.get(n) is None for row in out)]
-    for row in out:
-        for n in empty:
-            row.pop(n, None)
-    if "" in names:
-        spilled = [row for row in out if row.get("") is not None]
-        # Many rows past the last name is DairyComp's 33-column limit; a few is a stray comma in a remark.
-        if len(spilled) > max(5, len(out) // 100):
-            raise ValueError(f"{Path(path).name}: more values than column names. DairyComp prints at most 33 column "
-                             "names; split the items over two reports, each starting ID BDAT.")
-        for row in out:
-            extra = row.pop("", None)
-            if extra is not None:
-                row["_spilled"] = extra   # counted and reported by the reader of the herd, never used
+
+    # Number of named columns (excluding DairyComp's trailing blank column).
+    named_count = len(raw_header)
+    while named_count > 0 and not raw_header[named_count - 1]:
+        named_count -= 1
+    is_events = {"EVENT", "DATE", "REMARK"} <= set(raw_header)
+
+    out: list[dict[str, str | None]] = []
+    spilled_rows: list[int] = []
+    for row_idx, r in enumerate(rows):
+        # Detect a row wider than the header (e.g. an unquoted comma inside a remark shifted cells right).
+        has_overflow = len(r) > len(raw_header) and any(v not in ("", "-", "NA") for v in r[named_count:])
+        if not has_overflow:
+            # Also catch an unquoted comma inside a remark when there is a trailing comma in header:
+            # len(r) > len(raw_header) even if the very last cell is blank because the trailing comma shifted right.
+            has_overflow = len(r) > len(raw_header)
+        r_pad = r + [""] * (width - len(r))
+        rec = {n: (None if v in ("", "-", "NA") else v) for n, v in zip(names, r_pad)}
+        extra_vals = [rec.pop(bn, None) for bn in blank_names]
+        non_empty_extra = [v for v in extra_vals if v is not None]
+        if has_overflow or non_empty_extra:
+            spilled_rows.append(row_idx)
+            if is_events:
+                # A stray comma inside REMARK shifts R, T, B, PROTOCOLS, TECHNICIAN right: blank them so
+                # remark text can never leak into structured columns like result_code or technician_code.
+                for col in _POST_REMARK_COLS:
+                    if col in rec:
+                        rec[col] = None
+            rec["_spilled"] = ", ".join(non_empty_extra) if non_empty_extra else "shifted"
+        out.append(rec)
+
+    # Many rows past the last name is DairyComp's 33-column limit; a few is a stray comma in a remark.
+    if len(spilled_rows) > max(5, len(out) // 100):
+        raise ValueError(f"{Path(path).name}: more values than column names. DairyComp prints at most 33 column "
+                         "names; split the items over two reports, each starting ID BDAT.")
     return out
 
 
-def read_item_list(path) -> list[dict]:
+def read_item_list(path: str | Path) -> list[dict]:
     """The farm's item list: ALTER\\2 > Tools > Export > CSV (Name, Index, Loc/Op1, Len/Op2, Type, Description), or the
     ALTER\\2 report saved as text (columns under a ===== ruler). `computed` is True when the first operand names
     another item, as DIM's names DDAT and FDAT; plain numbers there don't prove an item is raw (305M)."""
@@ -181,12 +231,12 @@ EZFEED_REPORTS = {
 }
 
 
-def ez_rows(path) -> list[list[str]]:
+def ez_rows(path: str | Path) -> list[list[str]]:
     return [[c.strip() for c in split_csv(l)] for l in read_lines(path) if l.replace(",", "").strip()]
 
 
-def ezfeed_kind(rows) -> tuple[str, int] | None:
-    for i, row in enumerate(rows[:3]):
+def ezfeed_kind(rows, max_scan: int = 3) -> tuple[str, int] | None:
+    for i, row in enumerate(rows[:max_scan]):
         r = list(row)
         while r and not r[-1]:
             r.pop()
@@ -197,13 +247,8 @@ def ezfeed_kind(rows) -> tuple[str, int] | None:
 
 
 def ez_date(text) -> date | None:
-    s = (text or "").strip()
-    if re.fullmatch(r"\d{1,2}/\d{1,2}/\d{4}", s):
-        try:
-            return datetime.strptime(s, "%m/%d/%Y").date()
-        except ValueError:
-            return None
-    return None
+    """EZfeed date (MM/DD/YYYY, MM/DD/YY, or YYYY-MM-DD)."""
+    return parse_dc_date(text)
 
 
 def ez_time(text) -> str | None:
@@ -245,37 +290,68 @@ def _walk(body, levels, keep):
     return out, skipped
 
 
-def read_ezfeed(path) -> dict | None:
+def _find_banner_cols(banner: list[str], units: list[str]) -> tuple[int, int, int, int, int, int]:
+    """Locate (dm_t, dm_a, hd_t, hd_a, tot_t, tot_a) columns from banner + unit labels, defaulting to EZfeed order."""
+    labels = [f"{(banner[i] if i < len(banner) else '').strip()} {u}".strip() for i, u in enumerate(units)]
+
+    def col(prefix: str, unit: str, fallback: int) -> int:
+        for i, lab in enumerate(labels):
+            if lab.startswith(prefix) and unit in lab:
+                return i
+        return fallback
+
+    dm_t = col("DMTgt", "lbs/hd", 3)
+    dm_a = col("DMAct", "lbs/hd", 4)
+    hd_t = col("$Tgt", "$/hd", 5)
+    hd_a = col("$Act", "$/hd", 6)
+    tot_t = col("$Tgt", "($)", 7)
+    tot_a = col("$Act", "IU", 8)
+    # If banner puts $Act before $Tgt for total columns, respect the last two columns cleanly.
+    if tot_a == tot_t:
+        tot_t, tot_a = 7, 8
+    return dm_t, dm_a, hd_t, hd_a, tot_t, tot_a
+
+
+def read_ezfeed(path: str | Path, *, flexible: bool = False) -> dict | None:
     """One EZfeed report: {'kind', 'title', 'table', 'rows' (list of dicts), 'skipped'}; None if it isn't one of the
-    reports read here."""
+    reports read here. With `flexible=True`, also recognises intake/ration reports with extra title rows or subset columns."""
     rows = ez_rows(path)
-    found = ezfeed_kind(rows)
+    found = ezfeed_kind(rows, max_scan=len(rows) if flexible else 3)
+    if found is None and flexible:
+        # Fallback for custom/trimmed intake or ration exports (preserves legacy dairyread behavior).
+        for i, r in enumerate(rows):
+            low = [c.lower() for c in r]
+            if i > 0 and len(low) >= 3 and low[0] == "pen" and low[1] == "ingredient" and low[2] == "date":
+                found = ("intake_by_pen", i)
+                break
+            if len(low) >= 2 and low[0] == "ration" and low[1] == "ingredient":
+                found = ("rations", i)
+                break
     if found is None:
         return None
     kind, at = found
     title, table, _ = EZFEED_REPORTS[kind]
     body = rows[at + 1:]
     if kind in ("intake_by_pen", "intake_by_ration"):
-        banner = rows[0] if at > 0 else []
-        t = banner.index("DMTgt") if "DMTgt" in banner else None
-        a = banner.index("DMAct") if "DMAct" in banner else None
-        target_first = t is None or a is None or t < a
+        banner = rows[at - 1] if at > 0 else []
+        units = rows[at]
+        dm_t, dm_a, hd_t, hd_a, tot_t, tot_a = _find_banner_cols(banner, units)
         got, skipped = _walk(body, [0, 1], lambda r, c: ez_date(_cell(r, 2)) is not None and c[0] and c[1])
-
-        def pair(i, j, f, r):
-            x, y = f(_cell(r, i)), f(_cell(r, j))
-            return (x, y) if target_first else (y, x)
-
         group = "pen" if kind == "intake_by_pen" else "ration"
-        data = []
-        for r, (g, ing) in got:
-            dm = pair(3, 4, number, r)
-            hd = pair(5, 6, number, r)
-            tot = pair(7, 8, number, r)
-            data.append({group: g, "ingredient": ing, "date": ez_date(_cell(r, 2)),
-                         "target_dm_lb_per_head": dm[0], "actual_dm_lb_per_head": dm[1],
-                         "target_cost_per_head": hd[0], "actual_cost_per_head": hd[1],
-                         "target_cost": tot[0], "actual_cost": tot[1]})
+        data = [
+            {
+                group: g,
+                "ingredient": ing,
+                "date": ez_date(_cell(r, 2)),
+                "target_dm_lb_per_head": number(_cell(r, dm_t)),
+                "actual_dm_lb_per_head": number(_cell(r, dm_a)),
+                "target_cost_per_head": number(_cell(r, hd_t)),
+                "actual_cost_per_head": number(_cell(r, hd_a)),
+                "target_cost": number(_cell(r, tot_t)) if tot_t < len(r) else None,
+                "actual_cost": number(_cell(r, tot_a)) if tot_a < len(r) else None,
+            }
+            for r, (g, ing) in got
+        ]
     elif kind.startswith("pen_summary"):
         stage = {"pen_summary_milking": "milking", "pen_summary_dry": "dry", "pen_summary_heifers": "heifer"}[kind]
         grouped = stage == "dry"
@@ -314,7 +390,7 @@ def read_ezfeed(path) -> dict | None:
     return {"kind": kind, "title": title, "table": table, "rows": data, "skipped": skipped}
 
 
-def read_pen_milk(path) -> dict:
+def read_pen_milk(path: str | Path) -> dict:
     """Pen milk by day (date, pen, milk_lb, fat_pct, protein_pct): {(pen, date): {milk_lb, fat_pct, protein_pct}}."""
     rows = list(csv.DictReader(read_lines(path)))
     out = {}
@@ -329,7 +405,7 @@ def read_pen_milk(path) -> dict:
 
 # --- which file is which ---------------------------------------------------------------------------------------------
 
-def identify(path) -> dict:
+def identify(path: str | Path) -> dict:
     """{'path', 'kind': cows | events | items | feed | unknown, 'detail'}."""
     p = Path(path)
     try:
@@ -350,7 +426,7 @@ def identify(path) -> dict:
         kind = "items"
     elif "ID" in header:
         kind = "cows"
-    elif {"DATE", "PEN", "MILK_LB"} <= {h.lower().upper() for h in header} or header[:3] == ["DATE", "PEN", "MILK_LB"]:
+    elif {"DATE", "PEN", "MILK_LB"} <= set(header) or header[:3] == ["DATE", "PEN", "MILK_LB"]:
         kind = "pen_milk"
     elif set(header) & {"FEED", "INGREDIENT", "FEED NAME"} and set(header) & {"NDF", "ANDF"} and \
             set(header) & {"CP", "PROTEIN"}:
@@ -360,9 +436,9 @@ def identify(path) -> dict:
     return {"path": str(p), "kind": kind, "detail": " ".join(h for h in header if h)}
 
 
-def identify_folder(folder) -> list[dict]:
+def identify_folder(folder: str | Path) -> list[dict]:
     folder = Path(folder)
     if not folder.is_dir():
-        raise SystemExit(f"Folder '{folder}' not found. Put the DairyComp and EZfeed reports in it.")
+        raise FolderNotFoundError(f"Folder '{folder}' not found. Put the DairyComp and EZfeed reports in it.")
     files = sorted(p for p in folder.iterdir() if p.is_file() and p.suffix.lower() in (".csv", ".txt", ".prn"))
     return [identify(p) for p in files]

@@ -356,6 +356,1745 @@
       "pregnancy_rate": 0.256
     }
   ],
+  "pregnancy_rate_cycles": [
+    {
+      "cycle_start": "2024-02-29",
+      "cycle_end": "2024-03-20",
+      "group": "all",
+      "eligible": 15,
+      "bred": 14,
+      "pregnant": 4,
+      "service_rate": 0.933,
+      "conception_rate": 0.286,
+      "pregnancy_rate": 0.267
+    },
+    {
+      "cycle_start": "2024-03-21",
+      "cycle_end": "2024-04-10",
+      "group": "all",
+      "eligible": 34,
+      "bred": 27,
+      "pregnant": 12,
+      "service_rate": 0.794,
+      "conception_rate": 0.444,
+      "pregnancy_rate": 0.353
+    },
+    {
+      "cycle_start": "2024-04-11",
+      "cycle_end": "2024-05-01",
+      "group": "all",
+      "eligible": 39,
+      "bred": 32,
+      "pregnant": 12,
+      "service_rate": 0.821,
+      "conception_rate": 0.375,
+      "pregnancy_rate": 0.308
+    },
+    {
+      "cycle_start": "2024-05-02",
+      "cycle_end": "2024-05-22",
+      "group": "all",
+      "eligible": 57,
+      "bred": 44,
+      "pregnant": 20,
+      "service_rate": 0.772,
+      "conception_rate": 0.455,
+      "pregnancy_rate": 0.351
+    },
+    {
+      "cycle_start": "2024-05-23",
+      "cycle_end": "2024-06-12",
+      "group": "all",
+      "eligible": 55,
+      "bred": 37,
+      "pregnant": 14,
+      "service_rate": 0.673,
+      "conception_rate": 0.378,
+      "pregnancy_rate": 0.255
+    },
+    {
+      "cycle_start": "2024-06-13",
+      "cycle_end": "2024-07-03",
+      "group": "all",
+      "eligible": 58,
+      "bred": 43,
+      "pregnant": 15,
+      "service_rate": 0.741,
+      "conception_rate": 0.349,
+      "pregnancy_rate": 0.259
+    },
+    {
+      "cycle_start": "2024-07-04",
+      "cycle_end": "2024-07-24",
+      "group": "all",
+      "eligible": 61,
+      "bred": 42,
+      "pregnant": 14,
+      "service_rate": 0.689,
+      "conception_rate": 0.333,
+      "pregnancy_rate": 0.23
+    },
+    {
+      "cycle_start": "2024-07-25",
+      "cycle_end": "2024-08-14",
+      "group": "all",
+      "eligible": 65,
+      "bred": 52,
+      "pregnant": 16,
+      "service_rate": 0.8,
+      "conception_rate": 0.308,
+      "pregnancy_rate": 0.246
+    },
+    {
+      "cycle_start": "2024-08-15",
+      "cycle_end": "2024-09-04",
+      "group": "all",
+      "eligible": 66,
+      "bred": 51,
+      "pregnant": 19,
+      "service_rate": 0.773,
+      "conception_rate": 0.373,
+      "pregnancy_rate": 0.288
+    },
+    {
+      "cycle_start": "2024-09-05",
+      "cycle_end": "2024-09-25",
+      "group": "all",
+      "eligible": 63,
+      "bred": 47,
+      "pregnant": 16,
+      "service_rate": 0.746,
+      "conception_rate": 0.34,
+      "pregnancy_rate": 0.254
+    },
+    {
+      "cycle_start": "2024-09-26",
+      "cycle_end": "2024-10-16",
+      "group": "all",
+      "eligible": 64,
+      "bred": 49,
+      "pregnant": 15,
+      "service_rate": 0.766,
+      "conception_rate": 0.306,
+      "pregnancy_rate": 0.234
+    },
+    {
+      "cycle_start": "2024-10-17",
+      "cycle_end": "2024-11-06",
+      "group": "all",
+      "eligible": 67,
+      "bred": 54,
+      "pregnant": 19,
+      "service_rate": 0.806,
+      "conception_rate": 0.352,
+      "pregnancy_rate": 0.284
+    },
+    {
+      "cycle_start": "2024-11-07",
+      "cycle_end": "2024-11-27",
+      "group": "all",
+      "eligible": 68,
+      "bred": 41,
+      "pregnant": 18,
+      "service_rate": 0.603,
+      "conception_rate": 0.439,
+      "pregnancy_rate": 0.265
+    },
+    {
+      "cycle_start": "2024-11-28",
+      "cycle_end": "2024-12-18",
+      "group": "all",
+      "eligible": 63,
+      "bred": 52,
+      "pregnant": 20,
+      "service_rate": 0.825,
+      "conception_rate": 0.385,
+      "pregnancy_rate": 0.317
+    },
+    {
+      "cycle_start": "2024-12-19",
+      "cycle_end": "2025-01-08",
+      "group": "all",
+      "eligible": 62,
+      "bred": 51,
+      "pregnant": 21,
+      "service_rate": 0.823,
+      "conception_rate": 0.412,
+      "pregnancy_rate": 0.339
+    },
+    {
+      "cycle_start": "2025-01-09",
+      "cycle_end": "2025-01-29",
+      "group": "all",
+      "eligible": 53,
+      "bred": 45,
+      "pregnant": 13,
+      "service_rate": 0.849,
+      "conception_rate": 0.289,
+      "pregnancy_rate": 0.245
+    },
+    {
+      "cycle_start": "2025-01-30",
+      "cycle_end": "2025-02-19",
+      "group": "all",
+      "eligible": 59,
+      "bred": 43,
+      "pregnant": 15,
+      "service_rate": 0.729,
+      "conception_rate": 0.349,
+      "pregnancy_rate": 0.254
+    },
+    {
+      "cycle_start": "2025-02-20",
+      "cycle_end": "2025-03-12",
+      "group": "all",
+      "eligible": 60,
+      "bred": 48,
+      "pregnant": 22,
+      "service_rate": 0.8,
+      "conception_rate": 0.458,
+      "pregnancy_rate": 0.367
+    },
+    {
+      "cycle_start": "2025-03-13",
+      "cycle_end": "2025-04-02",
+      "group": "all",
+      "eligible": 65,
+      "bred": 46,
+      "pregnant": 20,
+      "service_rate": 0.708,
+      "conception_rate": 0.435,
+      "pregnancy_rate": 0.308
+    },
+    {
+      "cycle_start": "2025-04-03",
+      "cycle_end": "2025-04-23",
+      "group": "all",
+      "eligible": 64,
+      "bred": 49,
+      "pregnant": 19,
+      "service_rate": 0.766,
+      "conception_rate": 0.388,
+      "pregnancy_rate": 0.297
+    },
+    {
+      "cycle_start": "2025-04-24",
+      "cycle_end": "2025-05-14",
+      "group": "all",
+      "eligible": 70,
+      "bred": 52,
+      "pregnant": 16,
+      "service_rate": 0.743,
+      "conception_rate": 0.308,
+      "pregnancy_rate": 0.229
+    },
+    {
+      "cycle_start": "2025-05-15",
+      "cycle_end": "2025-06-04",
+      "group": "all",
+      "eligible": 69,
+      "bred": 51,
+      "pregnant": 13,
+      "service_rate": 0.739,
+      "conception_rate": 0.255,
+      "pregnancy_rate": 0.188
+    },
+    {
+      "cycle_start": "2025-06-05",
+      "cycle_end": "2025-06-25",
+      "group": "all",
+      "eligible": 76,
+      "bred": 51,
+      "pregnant": 21,
+      "service_rate": 0.671,
+      "conception_rate": 0.412,
+      "pregnancy_rate": 0.276
+    },
+    {
+      "cycle_start": "2025-06-26",
+      "cycle_end": "2025-07-16",
+      "group": "all",
+      "eligible": 73,
+      "bred": 60,
+      "pregnant": 20,
+      "service_rate": 0.822,
+      "conception_rate": 0.333,
+      "pregnancy_rate": 0.274
+    },
+    {
+      "cycle_start": "2025-07-17",
+      "cycle_end": "2025-08-06",
+      "group": "all",
+      "eligible": 78,
+      "bred": 54,
+      "pregnant": 19,
+      "service_rate": 0.692,
+      "conception_rate": 0.352,
+      "pregnancy_rate": 0.244
+    },
+    {
+      "cycle_start": "2025-08-07",
+      "cycle_end": "2025-08-27",
+      "group": "all",
+      "eligible": 71,
+      "bred": 54,
+      "pregnant": 19,
+      "service_rate": 0.761,
+      "conception_rate": 0.352,
+      "pregnancy_rate": 0.268
+    },
+    {
+      "cycle_start": "2025-08-28",
+      "cycle_end": "2025-09-17",
+      "group": "all",
+      "eligible": 69,
+      "bred": 48,
+      "pregnant": 13,
+      "service_rate": 0.696,
+      "conception_rate": 0.271,
+      "pregnancy_rate": 0.188
+    },
+    {
+      "cycle_start": "2025-09-18",
+      "cycle_end": "2025-10-08",
+      "group": "all",
+      "eligible": 80,
+      "bred": 61,
+      "pregnant": 25,
+      "service_rate": 0.762,
+      "conception_rate": 0.41,
+      "pregnancy_rate": 0.312
+    },
+    {
+      "cycle_start": "2025-10-09",
+      "cycle_end": "2025-10-29",
+      "group": "all",
+      "eligible": 72,
+      "bred": 51,
+      "pregnant": 11,
+      "service_rate": 0.708,
+      "conception_rate": 0.216,
+      "pregnancy_rate": 0.153
+    },
+    {
+      "cycle_start": "2025-10-30",
+      "cycle_end": "2025-11-19",
+      "group": "all",
+      "eligible": 78,
+      "bred": 59,
+      "pregnant": 21,
+      "service_rate": 0.756,
+      "conception_rate": 0.356,
+      "pregnancy_rate": 0.269
+    }
+  ],
+  "pregnant_by_150": [
+    {
+      "group": "1",
+      "n": 199,
+      "pregnant": 154,
+      "share": 0.774,
+      "ci_low": 0.711,
+      "ci_high": 0.826
+    },
+    {
+      "group": "2+",
+      "n": 426,
+      "pregnant": 300,
+      "share": 0.704,
+      "ci_low": 0.659,
+      "ci_high": 0.746
+    }
+  ],
+  "first_service": {
+    "rows": [
+      {
+        "group": "1",
+        "lactations": 223,
+        "bred": 223,
+        "median_dim": 62,
+        "mean_dim": 62.4,
+        "share_by_vwp21": 0.78,
+        "share_by_100": 1
+      },
+      {
+        "group": "2+",
+        "lactations": 467,
+        "bred": 467,
+        "median_dim": 63,
+        "mean_dim": 62.8,
+        "share_by_vwp21": 0.805,
+        "share_by_100": 1
+      }
+    ],
+    "bands": [
+      {
+        "band": "under 50",
+        "lactations": 0,
+        "share": 0
+      },
+      {
+        "band": "50-70",
+        "lactations": 550,
+        "share": 0.797
+      },
+      {
+        "band": "71-100",
+        "lactations": 140,
+        "share": 0.203
+      },
+      {
+        "band": "101+",
+        "lactations": 0,
+        "share": 0
+      },
+      {
+        "band": "not bred",
+        "lactations": 0,
+        "share": 0
+      }
+    ]
+  },
+  "time_to_pregnancy": {
+    "rows": [
+      {
+        "group": "1",
+        "lactations": 255,
+        "pregnant": 196,
+        "median_dim": 89,
+        "pregnant_by_100": 0.609,
+        "pregnant_by_150": 0.801,
+        "pregnant_by_200": 0.926
+      },
+      {
+        "group": "2+",
+        "lactations": 532,
+        "pregnant": 392,
+        "median_dim": 100,
+        "pregnant_by_100": 0.501,
+        "pregnant_by_150": 0.74,
+        "pregnant_by_200": 0.861
+      }
+    ],
+    "p_value": 0.0079841807493
+  },
+  "pregnancy_loss": {
+    "rows": [
+      {
+        "group": "1",
+        "pregnant": 218,
+        "lost": 9,
+        "share": 0.041,
+        "ci_low": 0.022,
+        "ci_high": 0.077
+      },
+      {
+        "group": "2+",
+        "pregnant": 465,
+        "lost": 29,
+        "share": 0.062,
+        "ci_low": 0.044,
+        "ci_high": 0.088
+      }
+    ],
+    "cases": 38
+  },
+  "calving_interval": [
+    {
+      "group": "1",
+      "intervals": 183,
+      "median_days": 365,
+      "mean_days": 388.1,
+      "mean_months": 12.8,
+      "over_14_5_months": 0.153,
+      "pregnant_lactations": 199,
+      "days_open_median": 79,
+      "days_open_mean": 95
+    },
+    {
+      "group": "2+",
+      "intervals": 320,
+      "median_days": 375.5,
+      "mean_days": 402.6,
+      "mean_months": 13.2,
+      "over_14_5_months": 0.209,
+      "pregnant_lactations": 395,
+      "days_open_median": 89,
+      "days_open_mean": 102.8
+    }
+  ],
+  "age_first_calving": [
+    {
+      "group": "2022",
+      "heifers": 10,
+      "median_months": 23.7,
+      "mean_months": 23.7,
+      "over_24_months": 0.4
+    },
+    {
+      "group": "2023",
+      "heifers": 93,
+      "median_months": 23.8,
+      "mean_months": 23.8,
+      "over_24_months": 0.419
+    },
+    {
+      "group": "2024",
+      "heifers": 146,
+      "median_months": 23.9,
+      "mean_months": 23.8,
+      "over_24_months": 0.438
+    },
+    {
+      "group": "2025",
+      "heifers": 121,
+      "median_months": 23.8,
+      "mean_months": 23.8,
+      "over_24_months": 0.38
+    }
+  ],
+  "conception_by": {
+    "service": {
+      "rows": [
+        {
+          "service": "1",
+          "services": 709,
+          "pregnant": 249,
+          "share": 0.351,
+          "ci_low": 0.317,
+          "ci_high": 0.387,
+          "note": ""
+        },
+        {
+          "service": "2",
+          "services": 417,
+          "pregnant": 145,
+          "share": 0.348,
+          "ci_low": 0.304,
+          "ci_high": 0.395,
+          "note": ""
+        },
+        {
+          "service": "3+",
+          "services": 586,
+          "pregnant": 200,
+          "share": 0.341,
+          "ci_low": 0.304,
+          "ci_high": 0.381,
+          "note": ""
+        }
+      ],
+      "p_value": 0.93228386275
+    },
+    "month": {
+      "rows": [
+        {
+          "month": "Jan",
+          "services": 157,
+          "pregnant": 59,
+          "share": 0.376,
+          "ci_low": 0.304,
+          "ci_high": 0.454,
+          "note": ""
+        },
+        {
+          "month": "Feb",
+          "services": 152,
+          "pregnant": 57,
+          "share": 0.375,
+          "ci_low": 0.302,
+          "ci_high": 0.454,
+          "note": ""
+        },
+        {
+          "month": "Mar",
+          "services": 181,
+          "pregnant": 64,
+          "share": 0.354,
+          "ci_low": 0.288,
+          "ci_high": 0.426,
+          "note": ""
+        },
+        {
+          "month": "Apr",
+          "services": 177,
+          "pregnant": 64,
+          "share": 0.362,
+          "ci_low": 0.294,
+          "ci_high": 0.435,
+          "note": ""
+        },
+        {
+          "month": "May",
+          "services": 198,
+          "pregnant": 69,
+          "share": 0.348,
+          "ci_low": 0.286,
+          "ci_high": 0.417,
+          "note": ""
+        },
+        {
+          "month": "Jun",
+          "services": 165,
+          "pregnant": 65,
+          "share": 0.394,
+          "ci_low": 0.323,
+          "ci_high": 0.47,
+          "note": ""
+        },
+        {
+          "month": "Jul",
+          "services": 199,
+          "pregnant": 67,
+          "share": 0.337,
+          "ci_low": 0.275,
+          "ci_high": 0.405,
+          "note": ""
+        },
+        {
+          "month": "Aug",
+          "services": 180,
+          "pregnant": 64,
+          "share": 0.356,
+          "ci_low": 0.289,
+          "ci_high": 0.428,
+          "note": ""
+        },
+        {
+          "month": "Sep",
+          "services": 175,
+          "pregnant": 57,
+          "share": 0.326,
+          "ci_low": 0.261,
+          "ci_high": 0.398,
+          "note": ""
+        },
+        {
+          "month": "Oct",
+          "services": 186,
+          "pregnant": 58,
+          "share": 0.312,
+          "ci_low": 0.25,
+          "ci_high": 0.382,
+          "note": ""
+        },
+        {
+          "month": "Nov",
+          "services": 169,
+          "pregnant": 54,
+          "share": 0.32,
+          "ci_low": 0.254,
+          "ci_high": 0.393,
+          "note": ""
+        },
+        {
+          "month": "Dec",
+          "services": 98,
+          "pregnant": 32,
+          "share": 0.327,
+          "ci_low": 0.242,
+          "ci_high": 0.424,
+          "note": ""
+        }
+      ],
+      "p_value": 0.92438028817
+    },
+    "dim_band": {
+      "rows": [
+        {
+          "dim_band": "under 60",
+          "services": 292,
+          "pregnant": 109,
+          "share": 0.373,
+          "ci_low": 0.32,
+          "ci_high": 0.43,
+          "note": ""
+        },
+        {
+          "dim_band": "60-99",
+          "services": 853,
+          "pregnant": 307,
+          "share": 0.36,
+          "ci_low": 0.328,
+          "ci_high": 0.393,
+          "note": ""
+        },
+        {
+          "dim_band": "100-149",
+          "services": 486,
+          "pregnant": 153,
+          "share": 0.315,
+          "ci_low": 0.275,
+          "ci_high": 0.357,
+          "note": ""
+        },
+        {
+          "dim_band": "150-199",
+          "services": 234,
+          "pregnant": 86,
+          "share": 0.368,
+          "ci_low": 0.308,
+          "ci_high": 0.431,
+          "note": ""
+        },
+        {
+          "dim_band": "200+",
+          "services": 172,
+          "pregnant": 55,
+          "share": 0.32,
+          "ci_low": 0.255,
+          "ci_high": 0.393,
+          "note": ""
+        }
+      ],
+      "p_value": 0.318842274
+    },
+    "technician": {
+      "rows": [
+        {
+          "technician": "NOÉ",
+          "services": 690,
+          "pregnant": 238,
+          "share": 0.345,
+          "ci_low": 0.31,
+          "ci_high": 0.381,
+          "note": ""
+        },
+        {
+          "technician": "SAM",
+          "services": 686,
+          "pregnant": 253,
+          "share": 0.369,
+          "ci_low": 0.334,
+          "ci_high": 0.406,
+          "note": ""
+        },
+        {
+          "technician": "KIM",
+          "services": 661,
+          "pregnant": 219,
+          "share": 0.331,
+          "ci_low": 0.296,
+          "ci_high": 0.368,
+          "note": ""
+        }
+      ],
+      "p_value": 0.34233626367
+    },
+    "sire": {
+      "rows": [
+        {
+          "sire": "11HO89626",
+          "services": 186,
+          "pregnant": 70,
+          "share": 0.376,
+          "ci_low": 0.31,
+          "ci_high": 0.448,
+          "note": ""
+        },
+        {
+          "sire": "200HO31474",
+          "services": 183,
+          "pregnant": 55,
+          "share": 0.301,
+          "ci_low": 0.239,
+          "ci_high": 0.371,
+          "note": ""
+        },
+        {
+          "sire": "200HO98496",
+          "services": 181,
+          "pregnant": 69,
+          "share": 0.381,
+          "ci_low": 0.314,
+          "ci_high": 0.454,
+          "note": ""
+        },
+        {
+          "sire": "11HO31666",
+          "services": 178,
+          "pregnant": 68,
+          "share": 0.382,
+          "ci_low": 0.314,
+          "ci_high": 0.455,
+          "note": ""
+        },
+        {
+          "sire": "7HO41655",
+          "services": 171,
+          "pregnant": 60,
+          "share": 0.351,
+          "ci_low": 0.283,
+          "ci_high": 0.425,
+          "note": ""
+        },
+        {
+          "sire": "11HO23265",
+          "services": 169,
+          "pregnant": 64,
+          "share": 0.379,
+          "ci_low": 0.309,
+          "ci_high": 0.454,
+          "note": ""
+        },
+        {
+          "sire": "7HO79327",
+          "services": 167,
+          "pregnant": 47,
+          "share": 0.281,
+          "ci_low": 0.219,
+          "ci_high": 0.354,
+          "note": ""
+        },
+        {
+          "sire": "200HO82322",
+          "services": 166,
+          "pregnant": 59,
+          "share": 0.355,
+          "ci_low": 0.287,
+          "ci_high": 0.431,
+          "note": ""
+        },
+        {
+          "sire": "200HO41466",
+          "services": 165,
+          "pregnant": 64,
+          "share": 0.388,
+          "ci_low": 0.317,
+          "ci_high": 0.464,
+          "note": ""
+        },
+        {
+          "sire": "11HO47597",
+          "services": 160,
+          "pregnant": 52,
+          "share": 0.325,
+          "ci_low": 0.257,
+          "ci_high": 0.401,
+          "note": ""
+        },
+        {
+          "sire": "7HO54588",
+          "services": 157,
+          "pregnant": 45,
+          "share": 0.287,
+          "ci_low": 0.222,
+          "ci_high": 0.362,
+          "note": ""
+        },
+        {
+          "sire": "7HO11062",
+          "services": 154,
+          "pregnant": 57,
+          "share": 0.37,
+          "ci_low": 0.298,
+          "ci_high": 0.449,
+          "note": ""
+        }
+      ],
+      "p_value": 0.31142124664
+    },
+    "parity": {
+      "rows": [
+        {
+          "parity": "1",
+          "services": 600,
+          "pregnant": 226,
+          "share": 0.377,
+          "ci_low": 0.339,
+          "ci_high": 0.416,
+          "note": ""
+        },
+        {
+          "parity": "2+",
+          "services": 1437,
+          "pregnant": 484,
+          "share": 0.337,
+          "ci_low": 0.313,
+          "ci_high": 0.362,
+          "note": ""
+        }
+      ],
+      "p_value": 0.094979032709
+    }
+  },
+  "dry_period_length": {
+    "rows": [
+      {
+        "group": "2",
+        "n": 183,
+        "median": 58,
+        "mean": 57.9,
+        "share_under_30": 0,
+        "share_30_39": 0,
+        "share_40_60": 0.732,
+        "share_61_80": 0.268,
+        "share_over_80": 0
+      },
+      {
+        "group": "3+",
+        "n": 320,
+        "median": 58,
+        "mean": 58,
+        "share_under_30": 0,
+        "share_30_39": 0,
+        "share_40_60": 0.738,
+        "share_61_80": 0.262,
+        "share_over_80": 0
+      }
+    ],
+    "n_detail": 503
+  },
+  "left_reasons_reason": {
+    "rows": [
+      {
+        "reason": "sold",
+        "n": 106,
+        "share": 0.855,
+        "per_100_cow_years": 27
+      },
+      {
+        "reason": "died",
+        "n": 18,
+        "share": 0.145,
+        "per_100_cow_years": 4.6
+      }
+    ],
+    "average_herd": 392.7,
+    "cow_years": 392.4,
+    "total_left": 124,
+    "total_per_100_cow_years": 31.6
+  },
+  "left_reasons_dim": [
+    {
+      "group": "0-30",
+      "n": 3,
+      "sold": 0,
+      "died": 3,
+      "share": 0.024,
+      "per_100_cow_years": 0.8
+    },
+    {
+      "group": "61-200",
+      "n": 40,
+      "sold": 32,
+      "died": 8,
+      "share": 0.323,
+      "per_100_cow_years": 10.2
+    },
+    {
+      "group": "over 200",
+      "n": 49,
+      "sold": 46,
+      "died": 3,
+      "share": 0.395,
+      "per_100_cow_years": 12.5
+    },
+    {
+      "group": "dry",
+      "n": 32,
+      "sold": 28,
+      "died": 4,
+      "share": 0.258,
+      "per_100_cow_years": 8.2
+    }
+  ],
+  "left_herd_60": [
+    {
+      "group": "1",
+      "n": 244,
+      "left": 2,
+      "share": 0.008,
+      "ci_low": 0.002,
+      "ci_high": 0.029
+    },
+    {
+      "group": "2+",
+      "n": 519,
+      "left": 5,
+      "share": 0.01,
+      "ci_low": 0.004,
+      "ci_high": 0.022
+    }
+  ],
+  "event_months_metritis": {
+    "rows": [
+      {
+        "month": "Jan",
+        "cases": 16,
+        "share": 0.125
+      },
+      {
+        "month": "Feb",
+        "cases": 9,
+        "share": 0.07
+      },
+      {
+        "month": "Mar",
+        "cases": 14,
+        "share": 0.109
+      },
+      {
+        "month": "Apr",
+        "cases": 11,
+        "share": 0.086
+      },
+      {
+        "month": "May",
+        "cases": 14,
+        "share": 0.109
+      },
+      {
+        "month": "Jun",
+        "cases": 4,
+        "share": 0.031
+      },
+      {
+        "month": "Jul",
+        "cases": 14,
+        "share": 0.109
+      },
+      {
+        "month": "Aug",
+        "cases": 12,
+        "share": 0.094
+      },
+      {
+        "month": "Sep",
+        "cases": 6,
+        "share": 0.047
+      },
+      {
+        "month": "Oct",
+        "cases": 11,
+        "share": 0.086
+      },
+      {
+        "month": "Nov",
+        "cases": 8,
+        "share": 0.062
+      },
+      {
+        "month": "Dec",
+        "cases": 9,
+        "share": 0.07
+      }
+    ],
+    "p_value": 0.34246874245
+  },
+  "mastitis_month": [
+    {
+      "month": "2025-01",
+      "cases": 11,
+      "cows_in_milk": 338.9,
+      "per_100_cows": 3.2
+    },
+    {
+      "month": "2025-02",
+      "cases": 10,
+      "cows_in_milk": 336.2,
+      "per_100_cows": 3
+    },
+    {
+      "month": "2025-03",
+      "cases": 9,
+      "cows_in_milk": 342.1,
+      "per_100_cows": 2.6
+    },
+    {
+      "month": "2025-04",
+      "cases": 12,
+      "cows_in_milk": 343.9,
+      "per_100_cows": 3.5
+    },
+    {
+      "month": "2025-05",
+      "cases": 12,
+      "cows_in_milk": 345.1,
+      "per_100_cows": 3.5
+    },
+    {
+      "month": "2025-06",
+      "cases": 13,
+      "cows_in_milk": 344.7,
+      "per_100_cows": 3.8
+    },
+    {
+      "month": "2025-07",
+      "cases": 10,
+      "cows_in_milk": 341.7,
+      "per_100_cows": 2.9
+    },
+    {
+      "month": "2025-08",
+      "cases": 8,
+      "cows_in_milk": 340.5,
+      "per_100_cows": 2.3
+    },
+    {
+      "month": "2025-09",
+      "cases": 9,
+      "cows_in_milk": 346.3,
+      "per_100_cows": 2.6
+    },
+    {
+      "month": "2025-10",
+      "cases": 16,
+      "cows_in_milk": 347.6,
+      "per_100_cows": 4.6
+    },
+    {
+      "month": "2025-11",
+      "cases": 9,
+      "cows_in_milk": 341.1,
+      "per_100_cows": 2.6
+    },
+    {
+      "month": "2025-12",
+      "cases": 12,
+      "cows_in_milk": 341.3,
+      "per_100_cows": 3.5
+    }
+  ],
+  "mastitis_pooled": {
+    "from": "2025-01",
+    "to": "2025-12",
+    "months": 12,
+    "cases": 105,
+    "cow_months": 4109.3,
+    "per_100_cows_per_month": 2.56,
+    "ci_low": 2.09,
+    "ci_high": 3.09
+  },
+  "lactation_data": {
+    "rows": 811,
+    "columns": ["animal_id", "cow_id", "lactation", "fresh_date", "end_date", "end_reason", "first_service_date", "first_service_dim", "services", "conception_date", "days_open", "health_events", "fully_observed", "start_source", "clinical_mastitis", "displaced_abomasum", "lameness", "metritis", "milk_fever", "retained_placenta", "dry_days", "parity", "lactation_group", "pregnant", "first_service_outcome", "follow_days", "days_to_event", "event"],
+    "pregnant": 594,
+    "dry_days_non_na": 488,
+    "first_service_outcome": {
+      "open": 460,
+      "pregnant": 249,
+      "unknown": 41,
+      "4": 61
+    },
+    "metritis": 125,
+    "retained_placenta": 66,
+    "displaced_abomasum": 12,
+    "clinical_mastitis": 25,
+    "milk_fever": 30
+  },
+  "risk_ratio": {
+    "metritis_by_rp": {
+      "exposed_cases": 32,
+      "exposed_n": 66,
+      "exposed_risk": 0.485,
+      "reference_cases": 93,
+      "reference_n": 745,
+      "reference_risk": 0.125,
+      "rr": 3.88,
+      "rr_lower": 2.84,
+      "rr_upper": 5.31,
+      "or": 6.6,
+      "or_lower": 3.89,
+      "or_upper": 11.2,
+      "p_value": 8.3e-15,
+      "test": "chi-square"
+    },
+    "metritis_by_parity": {
+      "exposed_cases": 45,
+      "exposed_n": 260,
+      "exposed_risk": 0.173,
+      "reference_cases": 80,
+      "reference_n": 551,
+      "reference_risk": 0.145,
+      "rr": 1.19,
+      "rr_lower": 0.85,
+      "rr_upper": 1.66,
+      "or": 1.23,
+      "or_lower": 0.83,
+      "or_upper": 1.84,
+      "p_value": 0.3,
+      "test": "chi-square"
+    }
+  },
+  "fresh_disease_effects": {
+    "metritis": {
+      "milk": [
+        {
+          "parity": "1",
+          "group": "with metritis",
+          "n": 2,
+          "median": 66.45,
+          "q1": 65.775,
+          "q3": 67.125,
+          "mean": 66.4,
+          "p_value": 0.39,
+          "test": "Wilcoxon rank-sum"
+        },
+        {
+          "parity": "1",
+          "group": "without metritis",
+          "n": 10,
+          "median": 69.2,
+          "q1": 66.75,
+          "q3": 76.425,
+          "mean": 71.7,
+          "p_value": 0.39,
+          "test": "Wilcoxon rank-sum"
+        },
+        {
+          "parity": "2+",
+          "group": "with metritis",
+          "n": 4,
+          "median": 81.3,
+          "q1": 72.1,
+          "q3": 89.1,
+          "mean": 79.9,
+          "p_value": 0.096,
+          "test": "Wilcoxon rank-sum"
+        },
+        {
+          "parity": "2+",
+          "group": "without metritis",
+          "n": 19,
+          "median": 94.5,
+          "q1": 88.3,
+          "q3": 99.7,
+          "mean": 95.9,
+          "p_value": 0.096,
+          "test": "Wilcoxon rank-sum"
+        }
+      ],
+      "removal": {
+        "exposed_cases": 0,
+        "exposed_n": 118,
+        "exposed_risk": 0,
+        "reference_cases": 7,
+        "reference_n": 645,
+        "reference_risk": 0.011,
+        "rr": 0,
+        "rr_lower": null,
+        "rr_upper": null,
+        "or": 0,
+        "or_lower": null,
+        "or_upper": null,
+        "p_value": 0.6,
+        "test": "Fisher's exact"
+      },
+      "days_open": [
+        {
+          "group": "with metritis",
+          "lactations": 124,
+          "conceived": 77,
+          "median_days_open": 99,
+          "km_median_days_to_conception": 124,
+          "p_value": 0.21
+        },
+        {
+          "group": "without metritis",
+          "lactations": 673,
+          "conceived": 517,
+          "median_days_open": 84,
+          "km_median_days_to_conception": 96,
+          "p_value": 0.21
+        }
+      ]
+    },
+    "retained_placenta": {
+      "milk": [
+        {
+          "parity": "1",
+          "group": "with retained_placenta",
+          "n": 2,
+          "median": 69.05,
+          "q1": 67.725,
+          "q3": 70.375,
+          "mean": 69.1,
+          "p_value": 1,
+          "test": "Wilcoxon rank-sum"
+        },
+        {
+          "parity": "1",
+          "group": "without retained_placenta",
+          "n": 10,
+          "median": 68.2,
+          "q1": 65.775,
+          "q3": 75.95,
+          "mean": 71.2,
+          "p_value": 1,
+          "test": "Wilcoxon rank-sum"
+        },
+        {
+          "parity": "2+",
+          "group": "with retained_placenta",
+          "n": 2,
+          "median": 104.75,
+          "q1": 103.275,
+          "q3": 106.225,
+          "mean": 104.8,
+          "p_value": 0.11,
+          "test": "Wilcoxon rank-sum"
+        },
+        {
+          "parity": "2+",
+          "group": "without retained_placenta",
+          "n": 21,
+          "median": 91.4,
+          "q1": 86.5,
+          "q3": 97.2,
+          "mean": 92,
+          "p_value": 0.11,
+          "test": "Wilcoxon rank-sum"
+        }
+      ],
+      "removal": {
+        "exposed_cases": 0,
+        "exposed_n": 61,
+        "exposed_risk": 0,
+        "reference_cases": 7,
+        "reference_n": 702,
+        "reference_risk": 0.01,
+        "rr": 0,
+        "rr_lower": null,
+        "rr_upper": null,
+        "or": 0,
+        "or_lower": null,
+        "or_upper": null,
+        "p_value": 1,
+        "test": "Fisher's exact"
+      },
+      "days_open": [
+        {
+          "group": "with retained_placenta",
+          "lactations": 65,
+          "conceived": 45,
+          "median_days_open": 88,
+          "km_median_days_to_conception": 109,
+          "p_value": 0.78
+        },
+        {
+          "group": "without retained_placenta",
+          "lactations": 732,
+          "conceived": 549,
+          "median_days_open": 85,
+          "km_median_days_to_conception": 99,
+          "p_value": 0.78
+        }
+      ]
+    }
+  },
+  "scc_screen_parity": [
+    {
+      "cows": "all tested",
+      "group": "1",
+      "tested": 98,
+      "over_200k_cells_ml": 17,
+      "share_over_200k_cells_ml": 0.173,
+      "scs_5_plus_283k_cells_ml": 7,
+      "share_scs_5_plus_283k_cells_ml": 0.071,
+      "mean_scs": 2.82,
+      "scs_0_3_under_141k": 0.735,
+      "scs_4_141_282k": 0.194,
+      "scs_5_283_565k": 0.041,
+      "scs_6_plus_566k_up": 0.031
+    },
+    {
+      "cows": "all tested",
+      "group": "2+",
+      "tested": 246,
+      "over_200k_cells_ml": 48,
+      "share_over_200k_cells_ml": 0.195,
+      "scs_5_plus_283k_cells_ml": 22,
+      "share_scs_5_plus_283k_cells_ml": 0.089,
+      "mean_scs": 2.99,
+      "scs_0_3_under_141k": 0.675,
+      "scs_4_141_282k": 0.236,
+      "scs_5_283_565k": 0.077,
+      "scs_6_plus_566k_up": 0.012
+    },
+    {
+      "cows": "fresh, first test (40 DIM or less)",
+      "group": "1",
+      "tested": 12,
+      "over_200k_cells_ml": 4,
+      "share_over_200k_cells_ml": 0.333,
+      "scs_5_plus_283k_cells_ml": 2,
+      "share_scs_5_plus_283k_cells_ml": 0.167,
+      "mean_scs": 2.91,
+      "scs_0_3_under_141k": 0.583,
+      "scs_4_141_282k": 0.25,
+      "scs_5_283_565k": 0.167,
+      "scs_6_plus_566k_up": 0
+    },
+    {
+      "cows": "fresh, first test (40 DIM or less)",
+      "group": "2+",
+      "tested": 34,
+      "over_200k_cells_ml": 8,
+      "share_over_200k_cells_ml": 0.235,
+      "scs_5_plus_283k_cells_ml": 2,
+      "share_scs_5_plus_283k_cells_ml": 0.059,
+      "mean_scs": 3.1,
+      "scs_0_3_under_141k": 0.676,
+      "scs_4_141_282k": 0.265,
+      "scs_5_283_565k": 0.059,
+      "scs_6_plus_566k_up": 0
+    }
+  ],
+  "scc_screen_pen": [
+    {
+      "cows": "all tested",
+      "group": "1",
+      "tested": 22,
+      "over_200k_cells_ml": 6,
+      "share_over_200k_cells_ml": 0.273,
+      "scs_5_plus_283k_cells_ml": 2,
+      "share_scs_5_plus_283k_cells_ml": 0.091,
+      "mean_scs": 2.85,
+      "scs_0_3_under_141k": 0.682,
+      "scs_4_141_282k": 0.227,
+      "scs_5_283_565k": 0.091,
+      "scs_6_plus_566k_up": 0
+    },
+    {
+      "cows": "all tested",
+      "group": "11",
+      "tested": 91,
+      "over_200k_cells_ml": 15,
+      "share_over_200k_cells_ml": 0.165,
+      "scs_5_plus_283k_cells_ml": 6,
+      "share_scs_5_plus_283k_cells_ml": 0.066,
+      "mean_scs": 2.85,
+      "scs_0_3_under_141k": 0.736,
+      "scs_4_141_282k": 0.198,
+      "scs_5_283_565k": 0.033,
+      "scs_6_plus_566k_up": 0.033
+    },
+    {
+      "cows": "all tested",
+      "group": "21",
+      "tested": 228,
+      "over_200k_cells_ml": 44,
+      "share_over_200k_cells_ml": 0.193,
+      "scs_5_plus_283k_cells_ml": 21,
+      "share_scs_5_plus_283k_cells_ml": 0.092,
+      "mean_scs": 3,
+      "scs_0_3_under_141k": 0.675,
+      "scs_4_141_282k": 0.232,
+      "scs_5_283_565k": 0.079,
+      "scs_6_plus_566k_up": 0.013
+    },
+    {
+      "cows": "all tested",
+      "group": "50",
+      "tested": 3,
+      "over_200k_cells_ml": 0,
+      "share_over_200k_cells_ml": 0,
+      "scs_5_plus_283k_cells_ml": 0,
+      "share_scs_5_plus_283k_cells_ml": 0,
+      "mean_scs": 2.62,
+      "scs_0_3_under_141k": 0.667,
+      "scs_4_141_282k": 0.333,
+      "scs_5_283_565k": 0,
+      "scs_6_plus_566k_up": 0
+    },
+    {
+      "cows": "fresh, first test (40 DIM or less)",
+      "group": "1",
+      "tested": 12,
+      "over_200k_cells_ml": 4,
+      "share_over_200k_cells_ml": 0.333,
+      "scs_5_plus_283k_cells_ml": 2,
+      "share_scs_5_plus_283k_cells_ml": 0.167,
+      "mean_scs": 2.91,
+      "scs_0_3_under_141k": 0.583,
+      "scs_4_141_282k": 0.25,
+      "scs_5_283_565k": 0.167,
+      "scs_6_plus_566k_up": 0
+    },
+    {
+      "cows": "fresh, first test (40 DIM or less)",
+      "group": "2+",
+      "tested": 34,
+      "over_200k_cells_ml": 8,
+      "share_over_200k_cells_ml": 0.235,
+      "scs_5_plus_283k_cells_ml": 2,
+      "share_scs_5_plus_283k_cells_ml": 0.059,
+      "mean_scs": 3.1,
+      "scs_0_3_under_141k": 0.676,
+      "scs_4_141_282k": 0.265,
+      "scs_5_283_565k": 0.059,
+      "scs_6_plus_566k_up": 0
+    }
+  ],
+  "scc_dynamics_parity": [
+    {
+      "key": "infected_now",
+      "measure": "LS 4+ (200000+ cells/mL) at the latest test",
+      "group": "1",
+      "cows": 17,
+      "of": 98,
+      "percent": 17.3
+    },
+    {
+      "key": "scs5_now",
+      "measure": "LS 5+ (about 283000+) at the latest test",
+      "group": "1",
+      "cows": 4,
+      "of": 98,
+      "percent": 4.1
+    },
+    {
+      "key": "new_infection",
+      "measure": "New infections: LS 4+ now, of cows under 4 at the previous test",
+      "group": "1",
+      "cows": 6,
+      "of": 75,
+      "percent": 8
+    },
+    {
+      "key": "chronic",
+      "measure": "Chronic: LS 4+ at both tests, of cows with both tests",
+      "group": "1",
+      "cows": 7,
+      "of": 87,
+      "percent": 8
+    },
+    {
+      "key": "cured",
+      "measure": "Cured: under 4 now, of cows at 4+ at the previous test",
+      "group": "1",
+      "cows": 5,
+      "of": 12,
+      "percent": 41.7
+    },
+    {
+      "key": "first_test_heifers",
+      "measure": "First test LS 4+, heifers calved in the last 120 days",
+      "group": "1",
+      "cows": 6,
+      "of": 38,
+      "percent": 15.8
+    },
+    {
+      "key": "infected_now",
+      "measure": "LS 4+ (200000+ cells/mL) at the latest test",
+      "group": "2+",
+      "cows": 52,
+      "of": 246,
+      "percent": 21.1
+    },
+    {
+      "key": "scs5_now",
+      "measure": "LS 5+ (about 283000+) at the latest test",
+      "group": "2+",
+      "cows": 14,
+      "of": 246,
+      "percent": 5.7
+    },
+    {
+      "key": "new_infection",
+      "measure": "New infections: LS 4+ now, of cows under 4 at the previous test",
+      "group": "2+",
+      "cows": 10,
+      "of": 169,
+      "percent": 5.9
+    },
+    {
+      "key": "chronic",
+      "measure": "Chronic: LS 4+ at both tests, of cows with both tests",
+      "group": "2+",
+      "cows": 34,
+      "of": 214,
+      "percent": 15.9
+    },
+    {
+      "key": "cured",
+      "measure": "Cured: under 4 now, of cows at 4+ at the previous test",
+      "group": "2+",
+      "cows": 11,
+      "of": 45,
+      "percent": 24.4
+    },
+    {
+      "key": "first_test_cows",
+      "measure": "First test LS 4+, cows (2+) calved in the last 120 days",
+      "group": "2+",
+      "cows": 21,
+      "of": 91,
+      "percent": 23.1
+    },
+    {
+      "key": "dry_healthy",
+      "measure": "Dry period: stayed healthy (under 4 at dry-off and first test)",
+      "group": "2+",
+      "cows": 56,
+      "of": 91,
+      "percent": 61.5
+    },
+    {
+      "key": "dry_cured",
+      "measure": "Dry period: cured (4+ at dry-off, under 4 at first test)",
+      "group": "2+",
+      "cows": 14,
+      "of": 91,
+      "percent": 15.4
+    },
+    {
+      "key": "dry_new",
+      "measure": "Dry period: new infection (under 4 at dry-off, 4+ at first test)",
+      "group": "2+",
+      "cows": 11,
+      "of": 91,
+      "percent": 12.1
+    },
+    {
+      "key": "dry_chronic",
+      "measure": "Dry period: chronic (4+ at dry-off and first test)",
+      "group": "2+",
+      "cows": 10,
+      "of": 91,
+      "percent": 11
+    },
+    {
+      "key": "dry_cure_rate",
+      "measure": "Dry-period cure rate: under 4 at first test, of cows 4+ at dry-off",
+      "group": "2+",
+      "cows": 14,
+      "of": 24,
+      "percent": 58.3
+    },
+    {
+      "key": "dry_new_rate",
+      "measure": "Dry-period new infection rate: 4+ at first test, of cows under 4 at dry-off",
+      "group": "2+",
+      "cows": 11,
+      "of": 67,
+      "percent": 16.4
+    },
+    {
+      "key": "infected_at_dry_off",
+      "measure": "Infected at dry-off: LS 4+ at the last test before dry-off",
+      "group": "2+",
+      "cows": 24,
+      "of": 91,
+      "percent": 26.4
+    }
+  ],
+  "scc_dynamics_all": [
+    {
+      "key": "infected_now",
+      "measure": "LS 4+ (200000+ cells/mL) at the latest test",
+      "group": "all",
+      "cows": 69,
+      "of": 344,
+      "percent": 20.1
+    },
+    {
+      "key": "scs5_now",
+      "measure": "LS 5+ (about 283000+) at the latest test",
+      "group": "all",
+      "cows": 18,
+      "of": 344,
+      "percent": 5.2
+    },
+    {
+      "key": "new_infection",
+      "measure": "New infections: LS 4+ now, of cows under 4 at the previous test",
+      "group": "all",
+      "cows": 16,
+      "of": 244,
+      "percent": 6.6
+    },
+    {
+      "key": "chronic",
+      "measure": "Chronic: LS 4+ at both tests, of cows with both tests",
+      "group": "all",
+      "cows": 41,
+      "of": 301,
+      "percent": 13.6
+    },
+    {
+      "key": "cured",
+      "measure": "Cured: under 4 now, of cows at 4+ at the previous test",
+      "group": "all",
+      "cows": 16,
+      "of": 57,
+      "percent": 28.1
+    },
+    {
+      "key": "first_test_heifers",
+      "measure": "First test LS 4+, heifers calved in the last 120 days",
+      "group": "all",
+      "cows": 6,
+      "of": 38,
+      "percent": 15.8
+    },
+    {
+      "key": "first_test_cows",
+      "measure": "First test LS 4+, cows (2+) calved in the last 120 days",
+      "group": "all",
+      "cows": 21,
+      "of": 91,
+      "percent": 23.1
+    },
+    {
+      "key": "dry_healthy",
+      "measure": "Dry period: stayed healthy (under 4 at dry-off and first test)",
+      "group": "all",
+      "cows": 56,
+      "of": 91,
+      "percent": 61.5
+    },
+    {
+      "key": "dry_cured",
+      "measure": "Dry period: cured (4+ at dry-off, under 4 at first test)",
+      "group": "all",
+      "cows": 14,
+      "of": 91,
+      "percent": 15.4
+    },
+    {
+      "key": "dry_new",
+      "measure": "Dry period: new infection (under 4 at dry-off, 4+ at first test)",
+      "group": "all",
+      "cows": 11,
+      "of": 91,
+      "percent": 12.1
+    },
+    {
+      "key": "dry_chronic",
+      "measure": "Dry period: chronic (4+ at dry-off and first test)",
+      "group": "all",
+      "cows": 10,
+      "of": 91,
+      "percent": 11
+    },
+    {
+      "key": "dry_cure_rate",
+      "measure": "Dry-period cure rate: under 4 at first test, of cows 4+ at dry-off",
+      "group": "all",
+      "cows": 14,
+      "of": 24,
+      "percent": 58.3
+    },
+    {
+      "key": "dry_new_rate",
+      "measure": "Dry-period new infection rate: 4+ at first test, of cows under 4 at dry-off",
+      "group": "all",
+      "cows": 11,
+      "of": 67,
+      "percent": 16.4
+    },
+    {
+      "key": "infected_at_dry_off",
+      "measure": "Infected at dry-off: LS 4+ at the last test before dry-off",
+      "group": "all",
+      "cows": 24,
+      "of": 91,
+      "percent": 26.4
+    }
+  ],
   "feed_efficiency": [
     {
       "pen": "Pen 1",

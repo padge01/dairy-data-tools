@@ -13,6 +13,7 @@ import re
 from collections import defaultdict
 from datetime import timedelta
 
+from .errors import MissingDataError
 from .herd import Herd
 from .stats import ecm_lb, mean, median, p10_50_90
 
@@ -38,14 +39,8 @@ def nasem_dmi(milk, fat_pct, protein_pct, body_weight, bcs, dim, lactation, lact
 
 
 def _milking_tested(herd: Herd, pen=None):
-    out = []
-    for c in herd.in_herd():
-        if herd.status(c) != "milking" or not (c.get("test_milk") or 0) > 0:
-            continue
-        if pen is not None and c["pen"] != pen:
-            continue
-        out.append(c)
-    return out
+    pool = herd.cows_by_pen.get(pen, ()) if pen is not None else herd.in_herd()
+    return [c for c in pool if herd.status(c) == "milking" and (c.get("test_milk") or 0) > 0]
 
 
 NOT_FEED = re.compile(r"^\s*(.*\bpush ?out\b.*|water)\s*$", re.I)   # in EZfeed's lists, but not feeds
@@ -81,17 +76,16 @@ def pen_feed(herd: Herd, days: int = 7, milk_price: float | None = None, pen=Non
     the cows in it, and the same figures for the days before, to compare the pen with itself."""
     feed_days = _pen_feed_days(herd)
     if not feed_days:
-        raise SystemExit("No EZfeed Pen Summary or Ingredient Intake report in the folder: pen feed needs one.")
+        raise MissingDataError("No EZfeed Pen Summary or Ingredient Intake report in the folder: pen feed needs one.")
     rows_by_pen = defaultdict(list)
     for r in feed_days:
         if r.get("dc_pen"):
             rows_by_pen[r["dc_pen"]].append(r)
-    live = herd.in_herd()
     out = []
     for dc_pen, rows in sorted(rows_by_pen.items(), key=lambda x: (len(x[0]), x[0])):
         if pen is not None and dc_pen != str(pen):
             continue
-        heads = sum(1 for c in live if c["pen"] == dc_pen)
+        heads = len(herd.cows_by_pen.get(dc_pen, ()))
         if not heads:
             continue
         now, start, end = _window(rows, days)
@@ -181,7 +175,7 @@ def loading_accuracy(herd: Herd, by: str = "ingredient", days: int | None = None
     if by == "feeder":
         loads = [l for l in herd.feed.get("feed_loads", []) if l.get("deviation_pct") is not None and l.get("feeder")]
         if not loads:
-            raise SystemExit("No FeederLoad Summary in the folder.")
+            raise MissingDataError("No FeederLoad Summary in the folder.")
         groups = defaultdict(list)
         for l in loads:
             groups[l["feeder"]].append(l)
@@ -197,7 +191,7 @@ def loading_accuracy(herd: Herd, by: str = "ingredient", days: int | None = None
          and (r.get("target_dm_lb_per_head") or 0) > 0
          and r.get("actual_dm_lb_per_head") is not None]
     if not d:
-        raise SystemExit("No Ingredient Intake Tgt vs Act by Pen report in the folder.")
+        raise MissingDataError("No Ingredient Intake Tgt vs Act by Pen report in the folder.")
     if days:
         d, _, _ = _window(d, days)
     if by == "pen":
@@ -233,7 +227,7 @@ def refusals(herd: Herd, days: int = 7) -> dict:
     r = [x for x in herd.feed.get("feed_refusals", []) if x.get("refusal_pct") is not None
          and x.get("refusal_as_fed_lb") is not None]
     if not r:
-        raise SystemExit("No Refusal Summary in the folder.")
+        raise MissingDataError("No Refusal Summary in the folder.")
     if all((x["refusal_as_fed_lb"] or 0) == 0 for x in r):
         return {"rows": [], "note": "Every refusal in the report is zero: the farm doesn't weigh refusals here, so "
                                     "'fed' is delivered, not eaten."}
@@ -267,7 +261,7 @@ def consistency(herd: Herd, days: int = 14) -> dict:
     pd = [r for r in herd.feed.get("feed_pen_days", []) if (r.get("dm_lb_per_head") or 0) > 0
           and (r.get("head_count") or 0) > 0]
     if not pd:
-        raise SystemExit("No Pen Summary in the folder.")
+        raise MissingDataError("No Pen Summary in the folder.")
     by_pen = defaultdict(list)
     for r in pd:
         by_pen[r["pen"]].append(r)

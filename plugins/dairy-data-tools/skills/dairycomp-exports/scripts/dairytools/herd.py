@@ -1,4 +1,4 @@
-"""A farm's exports read into clean tables: cows, events, lactations and feed. The R version's intake() in Python.
+"""A farm's exports read into clean, typed, lazily indexed tables: cows, events, lactations and feed.
 
   herd = load("Farm Exports")      # a folder of DairyComp and EZfeed reports, named however the farm likes
 
@@ -23,17 +23,20 @@ from collections import Counter, defaultdict
 from dataclasses import dataclass, field
 from datetime import date, timedelta
 from pathlib import Path
+from typing import Any
 
 from . import commands, io, reference
+from .errors import NotFoundError
+from .models import Cow, Event, Lactation, records_to_dicts, to_pandas, to_polars
 from .stats import quantile
 
 
 @dataclass
 class Herd:
     folder: str
-    cows: list[dict] = field(default_factory=list)
-    events: list[dict] = field(default_factory=list)
-    lactations: list[dict] = field(default_factory=list)
+    cows: list[Cow] = field(default_factory=list)
+    events: list[Event] = field(default_factory=list)
+    lactations: list[Lactation] = field(default_factory=list)
     feed: dict[str, list[dict]] = field(default_factory=dict)
     items: list[dict] = field(default_factory=list)
     files: list[dict] = field(default_factory=list)
@@ -45,8 +48,115 @@ class Herd:
     pen_milk_days: dict = field(default_factory=dict)   # {(pen, day): {low, mid, high, cows}} from daily weights
     milk_history: dict = field(default_factory=dict)    # {cow number: [{day, lb, dim, kind}]}, daily or test
 
-    def status(self, cow: dict) -> str:
-        """milking, dry, heifer, left or unknown: one rule for every count."""
+    # Lazy, auto-invalidating lookup caches.
+    _index_stamp: tuple | None = field(default=None, init=False, repr=False)
+    _cow_by_animal: dict[str, Cow] = field(default_factory=dict, init=False, repr=False)
+    _cows_by_id: dict[str, list[Cow]] = field(default_factory=dict, init=False, repr=False)
+    _cows_by_pen: dict[str, list[Cow]] = field(default_factory=dict, init=False, repr=False)
+    _events_by_animal: dict[str, list[Event]] = field(default_factory=dict, init=False, repr=False)
+    _events_by_std: dict[str, list[Event]] = field(default_factory=dict, init=False, repr=False)
+    _lactations_by_animal: dict[str, list[Lactation]] = field(default_factory=dict, init=False, repr=False)
+    _lactations_by_key: dict[tuple[str, int], Lactation] = field(default_factory=dict, init=False, repr=False)
+
+    def _current_stamp(self) -> tuple:
+        return (
+            id(self.cows), len(self.cows),
+            id(self.events), len(self.events),
+            id(self.lactations), len(self.lactations),
+        )
+
+    def _ensure_indexes(self) -> None:
+        if self._index_stamp != self._current_stamp():
+            self.build_indexes()
+
+    def build_indexes(self) -> None:
+        """Rebuild lookup indexes across cows, events, and lactations."""
+        cow_by_animal: dict[str, Cow] = {}
+        cows_by_id: dict[str, list[Cow]] = defaultdict(list)
+        cows_by_pen: dict[str, list[Cow]] = defaultdict(list)
+
+        for c in self.cows:
+            aid = c["animal_id"]
+            cow_by_animal[aid] = c
+            cows_by_id[c["cow_id"]].append(c)
+            if not c.get("left_date"):
+                cows_by_pen[c["pen"]].append(c)
+
+        events_by_animal: dict[str, list[Event]] = defaultdict(list)
+        events_by_std: dict[str, list[Event]] = defaultdict(list)
+        for e in self.events:
+            events_by_animal[e["animal_id"]].append(e)
+            std = e.get("std_event")
+            if std:
+                events_by_std[std].append(e)
+        for evs in events_by_animal.values():
+            evs.sort(key=lambda e: e["event_date"])
+
+        lactations_by_animal: dict[str, list[Lactation]] = defaultdict(list)
+        lactations_by_key: dict[tuple[str, int], Lactation] = {}
+        for l in self.lactations:
+            lactations_by_animal[l["animal_id"]].append(l)
+            lact_num = l.get("lactation")
+            if lact_num is not None:
+                lactations_by_key.setdefault((l["animal_id"], lact_num), l)
+        for ls in lactations_by_animal.values():
+            ls.sort(key=lambda l: l["fresh_date"])
+
+        self._cow_by_animal = cow_by_animal
+        self._cows_by_id = dict(cows_by_id)
+        self._cows_by_pen = dict(cows_by_pen)
+        self._events_by_animal = dict(events_by_animal)
+        self._events_by_std = dict(events_by_std)
+        self._lactations_by_animal = dict(lactations_by_animal)
+        self._lactations_by_key = lactations_by_key
+        self._index_stamp = self._current_stamp()
+
+    @property
+    def cow_by_animal(self) -> dict[str, Cow]:
+        self._ensure_indexes()
+        return self._cow_by_animal
+
+    @property
+    def cows_by_id(self) -> dict[str, list[Cow]]:
+        self._ensure_indexes()
+        return self._cows_by_id
+
+    @property
+    def cows_by_pen(self) -> dict[str, list[Cow]]:
+        self._ensure_indexes()
+        return self._cows_by_pen
+
+    @property
+    def events_by_animal(self) -> dict[str, list[Event]]:
+        self._ensure_indexes()
+        return self._events_by_animal
+
+    @property
+    def events_by_std(self) -> dict[str, list[Event]]:
+        self._ensure_indexes()
+        return self._events_by_std
+
+    @property
+    def lactations_by_animal(self) -> dict[str, list[Lactation]]:
+        self._ensure_indexes()
+        return self._lactations_by_animal
+
+    @property
+    def lactations_by_key(self) -> dict[tuple[str, int], Lactation]:
+        self._ensure_indexes()
+        return self._lactations_by_key
+
+    @property
+    def data_end(self) -> date:
+        """Latest event date up to `as_of` (falling back to `as_of`, then today). One source of truth across modules."""
+        cap = self.as_of or date.max
+        ev_max = max((e["event_date"] for e in self.events if e.get("event_date") and e["event_date"] <= cap), default=None)
+        if ev_max is not None:
+            return ev_max
+        return self.as_of or date.today()
+
+    def status(self, cow: Cow | dict) -> str:
+        """milking, dry, heifer, left or unknown: one rule for every count (computed live so mutations never go stale)."""
         if cow.get("left_date"):
             return "left"
         lact = cow.get("lactation")
@@ -56,7 +166,7 @@ class Herd:
             return "dry"
         return "milking" if cow.get("days_in_milk") is not None else "unknown"
 
-    def in_herd(self) -> list[dict]:
+    def in_herd(self) -> list[Cow]:
         return [c for c in self.cows if not c.get("left_date")]
 
     def source_line(self) -> str:
@@ -64,6 +174,44 @@ class Herd:
         span = f"events {self.events_from} to {self.as_of}" if self.events_from else f"to {self.as_of}"
         return (f"From {len(self.files)} files in {Path(self.folder).name} ({', '.join(f'{v} {k}' for k, v in kinds.items())}); "
                 f"{span}; {len(self.in_herd())} animals in the herd.")
+
+    # --- tabular / DataFrame interop (zero required dependencies) ----------------------------------------------------
+
+    def to_records(
+        self,
+        table: str = "cows",
+        *,
+        include_remarks: bool = False,
+        include_untrusted: bool = False,
+        json_safe: bool = False,
+    ) -> list[dict[str, Any]]:
+        """Export a herd table as plain dicts (with `json_safe=True` converting dates to ISO strings).
+
+        `table`: `"cows"`, `"events"`, `"lactations"`, `"items"`, or any EZfeed table key in `herd.feed`.
+        Untrusted free-text fields (`remark`, `protocol`, `technician` on `"events"`, and unknown free-text columns
+        on `"cows"`) are omitted unless `include_untrusted=True` (or `include_remarks=True` for events).
+        """
+        untrusted = include_untrusted or include_remarks
+        if table == "cows":
+            return records_to_dicts(self.cows, include_untrusted=untrusted, json_safe=json_safe)
+        if table == "events":
+            return records_to_dicts(self.events, include_untrusted=untrusted, json_safe=json_safe)
+        if table == "lactations":
+            return records_to_dicts(self.lactations, include_untrusted=untrusted, json_safe=json_safe)
+        if table == "items":
+            return [dict(it) for it in self.items]
+        if table in self.feed:
+            return records_to_dicts(self.feed[table], include_untrusted=True, json_safe=json_safe)
+        valid = ["cows", "events", "lactations", "items", *sorted(self.feed)]
+        raise NotFoundError(f"Unknown table '{table}'. Available tables: {', '.join(valid)}.")
+
+    def to_pandas(self, table: str = "cows", *, include_remarks: bool = False, include_untrusted: bool = False):
+        """Export a herd table as a `pandas.DataFrame` (lazy optional import)."""
+        return to_pandas(self.to_records(table, include_remarks=include_remarks, include_untrusted=include_untrusted))
+
+    def to_polars(self, table: str = "cows", *, include_remarks: bool = False, include_untrusted: bool = False):
+        """Export a herd table as a `polars.DataFrame` (lazy optional import)."""
+        return to_polars(self.to_records(table, include_remarks=include_remarks, include_untrusted=include_untrusted))
 
 
 # --- loading ---------------------------------------------------------------------------------------------------------
@@ -302,7 +450,7 @@ def _assign(events, cows):
             e["animal_id"] = pick["animal_id"]
 
 
-def load(folder, as_of: date | None = None) -> Herd:
+def load(folder: str | Path, as_of: date | None = None) -> Herd:
     folder = Path(folder)
     files = io.identify_folder(folder)
     herd = Herd(folder=str(folder), files=files)
@@ -324,48 +472,48 @@ def load(folder, as_of: date | None = None) -> Herd:
     spilled = sum(1 for r in raw_cows + raw_events if r.pop("_spilled", None) is not None)
     if spilled:
         herd.problems.append(f"{spilled} rows had a value past the last column name (a comma typed into a remark, "
-                             "usually); that value was left out")
-    cows, probs = _standardise(raw_cows, "cows", herd.items)
+                             "usually); shifted values were left out")
+    cows_dicts, probs = _standardise(raw_cows, "cows", herd.items)
     herd.problems += [f"cow report: {p}" for p in probs]
-    _daily_milk_when_no_tests(herd, cows)
-    events, probs = _standardise(raw_events, "events", herd.items)
+    _daily_milk_when_no_tests(herd, cows_dicts)
+    events_dicts, probs = _standardise(raw_events, "events", herd.items)
     herd.problems += [f"events: {p}" for p in probs]
 
     taken = Counter()
-    for c in cows:
+    for c in cows_dicts:
         aid = animal_id(c["cow_id"], c.get("birth_date"))
         taken[aid] += 1
         # Without birth dates a reused number still names two animals: the later rows get #2, #3.
         c["animal_id"] = aid if taken[aid] == 1 else f"{aid}#{taken[aid]}"
         c["pen"] = pen_label(c.get("pen")) if "pen" in c else "No pen"
-    reused = sum(1 for _, n in Counter(c["cow_id"] for c in cows).items() if n > 1)
+    reused = sum(1 for _, n in Counter(c["cow_id"] for c in cows_dicts).items() if n > 1)
     if reused:
         herd.problems.append(f"{reused} cow numbers belong to more than one animal (reused); ID and birth date tell them "
                              "apart")
-    _assign(events, cows)
+    _assign(events_dicts, cows_dicts)
     seen, unique = set(), []
-    for e in events:
+    for e in events_dicts:
         k = (e["animal_id"], e.get("dc_event"), e.get("event_date"), e.get("remark"))
         if k in seen:
             continue
         seen.add(k)
         unique.append(e)
-    if len(unique) < len(events):
-        herd.problems.append(f"{len(events) - len(unique)} exact duplicate events removed")
-    events = [e for e in unique if e.get("event_date")]
-    herd.unmapped_codes = _map_events(events, _read_event_map(folder))
+    if len(unique) < len(events_dicts):
+        herd.problems.append(f"{len(events_dicts) - len(unique)} exact duplicate events removed")
+    events_dicts = [e for e in unique if e.get("event_date")]
+    herd.unmapped_codes = _map_events(events_dicts, _read_event_map(folder))
 
     # "Today" is the last day the records reach. An event dated after the export was made is a typing slip: it stays
     # in the records but doesn't set the day. The export was made no earlier than the computer's date, or than the
     # newest milk test in it (a test is recorded after it happens), whichever is later.
-    tests = [c["test_date"] for c in cows if c.get("test_date")]
+    tests = [c["test_date"] for c in cows_dicts if c.get("test_date")]
     made = max([date.today()] + tests)
-    future = [e for e in events if e["event_date"] > made]
+    future = [e for e in events_dicts if e["event_date"] > made]
     if future:
         herd.problems.append(f"{len(future)} events are dated after the export ({made}), e.g. "
                              f"{future[0]['dc_event']} on {future[0]['event_date']}: they don't set the records' last day")
-    dates = [e["event_date"] for e in events if e["event_date"] <= made]
-    cow_dates = [d for c in cows for d in (c.get("test_date"), c.get("fresh_date"), c.get("dry_date"))
+    dates = [e["event_date"] for e in events_dicts if e["event_date"] <= made]
+    cow_dates = [d for c in cows_dicts for d in (c.get("test_date"), c.get("fresh_date"), c.get("dry_date"))
                  if d and d <= made]
     herd.events_from = min(dates) if dates else None
     feed_days = _feed_days(folder, files, made)
@@ -376,16 +524,16 @@ def load(folder, as_of: date | None = None) -> Herd:
 
     # Exits: the last SOLD or DIED, else the archive date.
     exits = {}
-    for e in sorted(events, key=lambda e: e["event_date"]):
+    for e in sorted(events_dicts, key=lambda e: e["event_date"]):
         if e["std_event"] in ("sold", "died"):
             exits[e["animal_id"]] = e
-    for c in cows:
+    for c in cows_dicts:
         x = exits.get(c["animal_id"])
         c["left_date"] = x["event_date"] if x else c.get("archive_date")
         c["left_reason"] = x["std_event"] if x else ("left" if c.get("archive_date") else None)
 
     # Days in milk to the herd's last event.
-    for c in cows:
+    for c in cows_dicts:
         fresh, dry = c.get("fresh_date"), c.get("dry_date")
         c["is_dry"] = bool(fresh and dry and dry >= fresh)
         if not fresh or c["left_date"]:
@@ -394,7 +542,7 @@ def load(folder, as_of: date | None = None) -> Herd:
             c["days_in_milk"] = (dry - fresh).days
         else:
             c["days_in_milk"] = max(0, (herd.as_of - fresh).days)
-    no_fresh = [c for c in cows if not c.get("fresh_date") and not c["left_date"] and (c.get("lactation") or 0) >= 1]
+    no_fresh = [c for c in cows_dicts if not c.get("fresh_date") and not c["left_date"] and (c.get("lactation") or 0) >= 1]
     for c in no_fresh:   # no fresh date exported: DairyComp's own figure, when there is one, is all there is
         if c.get("dc_days_in_milk") is not None:
             c["days_in_milk"] = c["dc_days_in_milk"]
@@ -403,17 +551,20 @@ def load(folder, as_of: date | None = None) -> Herd:
         herd.problems.append(f"{len(no_fresh)} calved cows have no fresh date (FDAT) in the export: "
                              + (f"{with_dim} use DairyComp's own days in milk, " if with_dim else "")
                              + f"{len(no_fresh) - with_dim} can't be counted as milking or dry. Add FDAT to the cow report.")
-    shifts = sorted(c["dc_days_in_milk"] - c["days_in_milk"] for c in cows
+    shifts = sorted(c["dc_days_in_milk"] - c["days_in_milk"] for c in cows_dicts
                     if c.get("dc_days_in_milk") is not None and c.get("days_in_milk") is not None and not c["is_dry"])
     if shifts and shifts[len(shifts) // 2] > 7:
         herd.problems.append(f"DairyComp's days in milk run {shifts[len(shifts) // 2]} days past the herd's last event "
                              f"({herd.as_of}): the export is from an older backup. Days in milk here count to "
                              f"{herd.as_of}.")
 
-    herd.cows, herd.events = cows, events
-    herd.lactations = build_lactations(cows, events, herd.events_from)
-    orphans = {e["animal_id"] for e in events} - {c["animal_id"] for c in cows}
-    if orphans and cows:
+    herd.cows = [Cow.from_mapping(c) for c in cows_dicts]
+    herd.events = [Event.from_mapping(e) for e in events_dicts]
+    herd.lactations = build_lactations(herd.cows, herd.events, herd.events_from)
+    herd.build_indexes()
+
+    orphans = {e.animal_id for e in herd.events} - set(herd.cow_by_animal)
+    if orphans and herd.cows:
         herd.problems.append(f"events for {len(orphans)} animals not in the cow report (export the cow report with \\B "
                              "so sold and dead animals are in it)")
     _load_feed(herd, [f["path"] for f in files if f["kind"] == "feed"])
@@ -422,7 +573,7 @@ def load(folder, as_of: date | None = None) -> Herd:
 
 # --- lactations ------------------------------------------------------------------------------------------------------
 
-def build_lactations(cows, events, events_from) -> list[dict]:
+def build_lactations(cows, events, events_from) -> list[Lactation]:
     """One row per animal per lactation. A calving starts one (calvings within 30 days are one, entered twice); an
     abortion doesn't. A calving before the events export starts is worked out as event date minus DIM. Dry-off or
     leaving ends it, else the next calving. Conception is the last breeding on or before the first positive check.
@@ -440,7 +591,7 @@ def build_lactations(cows, events, events_from) -> list[dict]:
     for c in cows:
         if c.get("fresh_date") and (c.get("lactation") or 0) >= 1:
             starts[c["animal_id"]].append((c["fresh_date"], 2, c.get("lactation"), c["cow_id"]))
-    out = []
+    out: list[Lactation] = []
     for aid, s in starts.items():
         s.sort()
         groups, current = [], [s[0]]
@@ -468,21 +619,28 @@ def build_lactations(cows, events, events_from) -> list[dict]:
                 end, reason = None, "in milk at export"
             breed_end = min(d for d in (end, nxt) if d) if (end or nxt) else None
             services = [e["event_date"] for e in within if e["std_event"] == "breeding"
-                        and (breed_end is None or e["event_date"] < breed_end)
-                        and not _is_restated_breeding(e)]
+                        and (breed_end is None or e["event_date"] < breed_end)]
             pregs = [e["event_date"] for e in within if e["std_event"] == "preg_positive" and not _is_restated_breeding(e)]
             conception = None
             if pregs:
                 before = [d for d in services if d <= pregs[0]]
                 conception = max(before) if before else None
-            out.append({"animal_id": aid, "cow_id": cow_id, "lactation": lact, "fresh_date": fresh, "end_date": end,
-                        "end_reason": reason, "first_service_date": services[0] if services else None,
-                        "first_service_dim": (services[0] - fresh).days if services else None,
-                        "services": len(services), "conception_date": conception,
-                        "days_open": (conception - fresh).days if conception else None,
-                        "health_events": sum(1 for e in within if e["category"] == "health"),
-                        "fully_observed": bool(events_from and fresh >= events_from),
-                        "start_source": {1: "event", 2: "cow list", 3: "implied by DIM"}[priority]})
+            out.append(Lactation(
+                animal_id=aid,
+                cow_id=cow_id,
+                lactation=lact,
+                fresh_date=fresh,
+                end_date=end,
+                end_reason=reason,
+                first_service_date=services[0] if services else None,
+                first_service_dim=(services[0] - fresh).days if services else None,
+                services=len(services),
+                conception_date=conception,
+                days_open=(conception - fresh).days if conception else None,
+                health_events=sum(1 for e in within if e["category"] == "health"),
+                fully_observed=bool(events_from and fresh >= events_from),
+                start_source={1: "event", 2: "cow list", 3: "implied by DIM"}[priority],
+            ))
     return out
 
 
@@ -524,7 +682,7 @@ def _load_feed(herd: Herd, paths):
     rations = {r["ration"] for t in ("feed_rations", "feed_ration_intake") for r in herd.feed.get(t, [])}
     for r in herd.feed.get("feed_delivery", []):
         r["premix"] = r["ingredient"] in rations   # a premix is listed as itself and as its parts: count it once
-    dc_pens = {c["pen"] for c in herd.in_herd() if c.get("pen") != "No pen"}
+    dc_pens = {p for p in herd.cows_by_pen if p != "No pen"}
     unmatched = set()
     for t in ("feed_delivery", "feed_pen_days", "feed_refusals"):
         for r in herd.feed.get(t, []):

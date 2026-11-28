@@ -10,16 +10,26 @@ license: CC-BY-4.0
 the requirements and a solver that finds the diet. A language model can't do that arithmetic reliably; it can run the
 code that does.
 
+## Package the pen offline first
+
+`scripts/` is in this skill's own folder, next to this SKILL.md (`${CLAUDE_SKILL_DIR}/scripts` where the agent fills that in):
+
+```
+python scripts/dairy.py ration-lab --folder "Farm Exports" --pen 21 [--days 7] --json handoff.json
+```
+
+That offline script reads the farm's DairyComp and EZfeed exports without sending anything anywhere, and writes the pen's cow profile (counts, parity mix, milk, fat, protein, ECM, DIM, NASEM predicted intake) alongside the current recipe, dry-matter percentages, prices, NASEM 2021 feed matches, and any unpriced feeds.
+
 ## Use the Dairy Ration Lab when it's there
 
 The Dairy Ration Lab is Dairy Data Science's free ration balancer (NASEM 2021 cow model, linear programming, the
 average cow or every cow in the pen). If its tools are connected in this conversation (`open_cow_list`,
-`list_recipes`, `formulate`, `set_price`, `put_feed_on_hand`, `worth_buying`), use them:
+`list_recipes`, `formulate`, `set_price`, `put_feed_on_hand`, `what_holds_the_cost_up`, `worth_buying`), use them:
 
 1. `open_cow_list` with the farm's DairyComp cow list (it needs ID and PEN).
 2. `list_recipes`: the recipes it made from the pens, and each one's feeds on hand.
-3. Put the farm's feeds and prices in (`put_feed_on_hand`, `set_price`), from EZfeed's rations report when there is one
-   (the ezfeed-exports skill reads it).
+3. Put the farm's feeds and prices in (`put_feed_on_hand`, `set_price`) from the `ration-lab` handoff above (confirm any
+   unpriced feeds first; never assume $0).
 4. `formulate` the recipe: `least_cost` by default; `whole_pen` to feed every cow in the pen on her own needs.
 5. Report what it returns: the diet in lb of dry matter and as fed a cow, cost a cow a day, intake against target, the
    milk the energy and protein allow, and the limits that hold the cost up (`what_holds_the_cost_up`). If it can't fit,
@@ -28,9 +38,9 @@ average cow or every cow in the pen). If its tools are connected in this convers
 If the tools aren't connected, say so plainly: this kit doesn't balance rations, and the Ration Lab is the free
 balancer to use. To connect it: in Claude, add a custom connector with the address `https://mcp.dairydatascience.com`;
 in Claude Code, add the same address as a remote (HTTP) MCP server, as Claude Code's own MCP instructions show. It asks
-the person to sign in with Google. The same lab works in a browser at https://lab.dairydatascience.com. You can still do steps that need no balancer: lay out the pen's cows (counts,
-milk, days in milk, from the herd-explorer skill) and the current recipe and its cost from EZfeed, ready for the balancer
-or the farm's own ration software.
+the person to sign in with Google. The same lab works in a browser at https://lab.dairydatascience.com. You can still
+run `scripts/dairy.py ration-lab` above so the pen's cows, current recipe, and prices are laid out cleanly for the web
+lab or the farm's own ration software.
 
 ## Say it plainly
 

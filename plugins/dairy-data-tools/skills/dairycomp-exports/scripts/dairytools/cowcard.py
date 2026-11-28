@@ -119,7 +119,7 @@ def milk_curve(points, dim_now, kind: str, width=400, height=132) -> str:
 
 def cow_card_html(herd: Herd, cow, gestation: int = 280) -> str:
     rec = explorer.cow_record(herd, cow)
-    me = next(c for c in herd.cows if c["animal_id"] == rec["animal_id"])
+    me = herd.cow_by_animal[rec["animal_id"]]
     status = herd.status(me)
     today = herd.as_of
     fresh, conceived = me.get("fresh_date"), me.get("conception_date")
@@ -145,7 +145,7 @@ def cow_card_html(herd: Herd, cow, gestation: int = 280) -> str:
     daily = me.get("daily_milk") or 0
     milk = daily if daily > 0 else me.get("test_milk")
     milk_what = "lb a day" if daily > 0 else f"lb, {herd.milk_words}"
-    pen_milk = [c["test_milk"] for c in herd.in_herd() if c["pen"] == me.get("pen") and herd.status(c) == "milking"
+    pen_milk = [c["test_milk"] for c in herd.cows_by_pen.get(me.get("pen"), ()) if herd.status(c) == "milking"
                 and (c.get("test_milk") or 0) > 0]
     rank = ""
     if me.get("test_milk") and len(pen_milk) >= 5:
@@ -167,8 +167,8 @@ def cow_card_html(herd: Herd, cow, gestation: int = 280) -> str:
     steps = []
     if fresh:
         steps.append(("Calved", fresh, "past"))
-        bred = sorted(e["event_date"] for e in herd.events if e["animal_id"] == me["animal_id"]
-                      and e["std_event"] == "breeding" and e["event_date"] >= fresh)
+        bred = [e["event_date"] for e in herd.events_by_animal.get(me["animal_id"], ())
+                if e["std_event"] == "breeding" and e["event_date"] >= fresh]
         if bred:
             steps.append(("Bred" if len(bred) == 1 else f"Bred ×{len(bred)}", bred[-1], "past"))
         steps.append(("Today", today, "today"))

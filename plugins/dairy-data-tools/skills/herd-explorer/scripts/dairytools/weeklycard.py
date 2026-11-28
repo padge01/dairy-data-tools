@@ -8,6 +8,7 @@ from datetime import date, timedelta
 
 from . import feeding, weekly
 from .cards import CSS, _recipe, esc, ration_bars
+from .errors import DairyToolsError
 from .herd import Herd
 
 PAGE_CSS = """
@@ -136,7 +137,7 @@ def pen_feed_html(herd: Herd, milk_price: float | None = None, days: int = 7, sl
                         f"</div><div class='val'>{d:+.1f}%{esc(lb)}</div>")
         loading = (f"<div class='div'><div></div><div class='axis' style='text-align:right;padding-right:6px'>under"
                    f"</div><div class='axis' style='padding-left:6px'>over</div><div></div>{''.join(rows)}</div>")
-    except SystemExit:
+    except DairyToolsError:
         pass
     end = herd.as_of
     recipes = {p["pen"]: _recipe(herd, p["ezfeed_pen"], end - timedelta(days=days - 1), end) for p in pens}
