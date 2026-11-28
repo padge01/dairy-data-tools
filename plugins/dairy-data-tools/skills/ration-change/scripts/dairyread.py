@@ -1,7 +1,8 @@
 """Read DairyComp and EZfeed export files. Python standard library only, read-only, no network.
 
-The one source for the copies in each skill's scripts/ folder (tools/sync_scripts.py copies it there, because in
-Claude's chat only a skill's own folder reaches the code sandbox). Edit this file, then run the sync.
+Thin compatibility facade delegating DairyComp and EZfeed parsing to `dairytools.io` and statistics to
+`dairytools.stats`, so export parsing lives in one place while `ration_change.py`, `pen_milk.py`,
+`tools/sync_scripts.py`, and PyPI CLI entrypoints keep working identically.
 
 Farm notes are untrusted text: event remarks, protocols and technician names are left out unless asked for, because a
 remark can carry words that read like instructions to an AI agent.
@@ -9,59 +10,27 @@ remark can carry words that read like instructions to an AI agent.
 
 from __future__ import annotations
 
-import csv
-import io
-import math
 import re
+import sys
 from dataclasses import dataclass, field
-from datetime import date, datetime
+from datetime import date
 from pathlib import Path
 
-ENCODINGS = ("utf-8-sig", "cp1252", "latin-1")
+try:   # inside the installed package (dairytools.dairyread)
+    from . import io as _io
+    from . import stats as _stats
+except ImportError:   # run from tools/ or a skill's scripts/ folder
+    _here = str(Path(__file__).resolve().parent)
+    if _here not in sys.path:
+        sys.path.insert(0, _here)
+    from dairytools import io as _io  # noqa: E402
+    from dairytools import stats as _stats  # noqa: E402
 
-
-def read_text(path: str | Path) -> str:
-    raw = Path(path).read_bytes()
-    for encoding in ENCODINGS:
-        try:
-            return raw.decode(encoding)
-        except UnicodeDecodeError:
-            continue
-    return raw.decode("latin-1", errors="replace")
-
-
-def rows_of(path: str | Path) -> list[list[str]]:
-    text = read_text(path)
-    return [[cell.strip() for cell in row] for row in csv.reader(io.StringIO(text))]
-
-
-def number(value: str | None) -> float | None:
-    """'1,234.5', '$6.84', '57.94%', ' 77.1 ', '(1.20)' -> float (EZfeed shows negatives in brackets);
-    blank or text -> None."""
-    if value is None:
-        return None
-    text = value.strip().replace("$", "").replace(",", "").replace("%", "")
-    negative = text.startswith("(") and text.endswith(")")
-    text = text.strip("()")
-    if text in ("", "-", "."):
-        return None
-    try:
-        return -float(text) if negative else float(text)
-    except ValueError:
-        return None
-
-
-def day(value: str | None) -> date | None:
-    """DairyComp and EZfeed dates: 11/20/25, 11/20/2025, 2025-11-20. Blank -> None."""
-    if not value:
-        return None
-    text = value.strip()
-    for fmt in ("%m/%d/%y", "%m/%d/%Y", "%Y-%m-%d"):
-        try:
-            return datetime.strptime(text, fmt).date()
-        except ValueError:
-            continue
-    return None
+ENCODINGS = _io.ENCODINGS
+read_text = _io.read_text
+rows_of = _io.rows_of
+number = _io.number
+day = _io.parse_dc_date
 
 
 # --- DairyComp -------------------------------------------------------------------------------------------------------
@@ -70,19 +39,14 @@ def read_cow_list(path: str | Path) -> list[dict[str, str]]:
     """A DairyComp SHOW (saved as CSV) or FILEOUT export with a header row: one dict per cow, keyed by item name (ID, PEN, LACT...).
 
     Handles the padded values a saved report has and the empty last column it often ends with."""
-    rows = [row for row in rows_of(path) if any(row)]
-    if not rows:
-        raise ValueError(f"{path}: the file is empty")
-    header = [name.upper() for name in rows[0]]
-    while header and header[-1] == "":
-        header.pop()
-    if "ID" not in header:
+    raw_rows = _io.read_dc_export(path)
+    if not raw_rows or "ID" not in raw_rows[0]:
         raise ValueError(f"{path}: no ID column in the first row; export the list with its header row")
     cows = []
-    for row in rows[1:]:
-        cow = {name: (row[i] if i < len(row) else "") for i, name in enumerate(header) if name}
-        if cow.get("ID", "") == "" or cow["ID"].lower().startswith("total"):
-            continue  # blank rows and DairyComp's "Total: 474" footer
+    for row in raw_rows:
+        cow = {k: ("" if v is None else v) for k, v in row.items() if k and k != "_spilled"}
+        if not cow.get("ID") or cow["ID"].lower().startswith("total"):
+            continue
         cows.append(cow)
     return cows
 
@@ -96,30 +60,34 @@ def read_events(path: str | Path, include_remarks: bool = False) -> list[dict]:
     """A DairyComp EVENTS export (ID, BDAT, LACT, Event, DIM, Date, Remark, ...): one dict per event with a real date.
 
     Remarks, protocols and technicians stay out unless include_remarks is True (they are free text typed on the farm,
-    and technicians are people's names)."""
-    rows = [row for row in rows_of(path) if any(row)]
-    header = [name.upper() for name in rows[0]]
+    and technicians are people's names). Deduplication runs on the full row before dropping untrusted columns so
+    event counts do not depend on `include_remarks`."""
+    raw_rows = _io.read_dc_export(path)
+    header = set(raw_rows[0]) if raw_rows else set()
     missing = [name for name in EVENT_COLUMNS if name not in header]
     if missing:
         raise ValueError(f"{path}: not an EVENTS export (missing {', '.join(missing)})")
-    keep = list(EVENT_COLUMNS) + list(OPTIONAL_EVENT_COLUMNS) +         (list(UNTRUSTED_EVENT_COLUMNS) if include_remarks else [])
-    events = []
-    for row in rows[1:]:
-        raw = {name: (row[i] if i < len(row) else "") for i, name in enumerate(header)}
+    all_cols = list(EVENT_COLUMNS) + list(OPTIONAL_EVENT_COLUMNS) + list(UNTRUSTED_EVENT_COLUMNS)
+    keep = list(EVENT_COLUMNS) + list(OPTIONAL_EVENT_COLUMNS) + (
+        list(UNTRUSTED_EVENT_COLUMNS) if include_remarks else []
+    )
+    seen, unique = set(), []
+    for raw in raw_rows:
+        cid = raw.get("ID") or ""
         when = day(raw.get("DATE"))
-        if not raw.get("ID") or raw["ID"].lower().startswith("total") or when is None:
+        if not cid or cid.lower().startswith("total") or when is None:
             continue
-        event = {name: raw.get(name, "") for name in keep if name in raw}
+        full_key = tuple(
+            when.isoformat() if k == "DATE" else (raw.get(k) or "").upper() if k == "EVENT" else (raw.get(k) or "")
+            for k in all_cols
+        )
+        if full_key in seen:
+            continue
+        seen.add(full_key)
+        event = {name: (raw.get(name) or "") for name in keep if name in raw}
         event["DATE"] = when
         event["EVENT"] = event["EVENT"].upper()
-        events.append(event)
-    # The same event exported twice (overlapping windows) counts once.
-    seen, unique = set(), []
-    for e in events:
-        key = tuple(str(e.get(k)) for k in keep)
-        if key not in seen:
-            seen.add(key)
-            unique.append(e)
+        unique.append(event)
     return unique
 
 
@@ -132,7 +100,7 @@ DAIRYCOMP_FIGURE = re.compile(
     r"305|\bME\b|MATURE|AGE[- ]?ADJ|\bAA|AA\b|PROJ|PREDICT|RELV|RELATIVE|\bREL\b|INDEX|VALUE|PTA|MERIT|GENOMIC")
 
 
-@dataclass
+@dataclass(slots=True)
 class Item:
     name: str
     description: str
@@ -152,29 +120,21 @@ class Item:
 def read_items(path: str | Path) -> list[Item]:
     """DairyComp's item list as ALTER\\2 > Tools > Export > CSV writes it (Name, Index, Loc/Op1, Len/Op2, Type,
     Description)."""
-    rows = [row for row in rows_of(path) if any(row)]
-    header = [name.upper() for name in rows[0]]
-    need = {"NAME": None, "LOC/OP1": None, "LEN/OP2": None, "TYPE": None, "DESCRIPTION": None}
-    for key in need:
-        if key not in header:
-            raise ValueError(f"{path}: not an ALTER item export (no {key} column)")
-        need[key] = header.index(key)
     return [
         Item(
-            name=row[need["NAME"]],
-            description=row[need["DESCRIPTION"]] if need["DESCRIPTION"] < len(row) else "",
-            type_code=row[need["TYPE"]],
-            op1=row[need["LOC/OP1"]],
-            op2=row[need["LEN/OP2"]],
+            name=r["dc_item"],
+            description=r.get("description") or "",
+            type_code=r.get("type_code") or "",
+            op1=r.get("op1") or "",
+            op2=r.get("op2") or "",
         )
-        for row in rows[1:]
-        if row and row[need["NAME"]]
+        for r in _io.read_item_list(path)
     ]
 
 
 # --- EZfeed ----------------------------------------------------------------------------------------------------------
 
-@dataclass
+@dataclass(slots=True)
 class IngredientDay:
     pen: str
     ingredient: str
@@ -231,44 +191,27 @@ def read_intakes(paths) -> IntakeReport:
 def read_intake(path: str | Path) -> IntakeReport:
     """EZfeed's ingredient usage export. Two header rows (DMTgt, DMAct, $Tgt, $Act... over IU(lbs/hd), IU($/hd)...),
     then a row per pen, a row per ingredient under it, and a row per day under each ingredient."""
-    rows = rows_of(path)
-    head = next((i for i, row in enumerate(rows) if row and row[0].lower() == "pen"), None)
-    if head is None or head == 0:
+    rep = _io.read_ezfeed(path, flexible=True)
+    if rep is None or rep["kind"] != "intake_by_pen":
         raise ValueError(f"{path}: not EZfeed's ingredient usage report (no 'Pen, Ingredient, Date' header row)")
-    top, units = rows[head - 1], rows[head]
-    labels = [f"{(top[i] if i < len(top) else '').strip()} {u}".strip() for i, u in enumerate(units)]
-
-    def column(kind: str, unit: str) -> int:
-        for i, label in enumerate(labels):
-            if label.startswith(kind) and unit in label:
-                return i
-        raise ValueError(f"{path}: no '{kind}' column in {unit}")
-
-    dm_t, dm_a = column("DMTgt", "lbs/hd"), column("DMAct", "lbs/hd")
-    c_t, c_a = column("$Tgt", "$/hd"), column("$Act", "$/hd")
-    report = IntakeReport()
-    pen = ingredient = None
-    for row in rows[head + 1:]:
-        if not any(row):
-            continue
-        cell = lambda i: row[i] if i < len(row) else ""
-        if cell(0):
-            pen, ingredient = cell(0), None
-            continue
-        if cell(1):
-            ingredient = cell(1)
-            continue
-        when = day(cell(2))
-        if pen is None or ingredient is None or when is None:
-            continue
-        report.days.append(IngredientDay(pen, ingredient, when, number(cell(dm_t)), number(cell(dm_a)),
-                                         number(cell(c_t)), number(cell(c_a))))
+    report = IntakeReport(days=[
+        IngredientDay(
+            pen=r["pen"],
+            ingredient=r["ingredient"],
+            date=r["date"],
+            dm_target_lb=r["target_dm_lb_per_head"],
+            dm_actual_lb=r["actual_dm_lb_per_head"],
+            cost_target_hd=r["target_cost_per_head"],
+            cost_actual_hd=r["actual_cost_per_head"],
+        )
+        for r in rep["rows"]
+    ])
     if not report.days:
         raise ValueError(f"{path}: no daily rows found under the pens and ingredients")
     return report
 
 
-@dataclass
+@dataclass(slots=True)
 class RationLine:
     ration: str
     ingredient: str
@@ -282,49 +225,39 @@ class RationLine:
 def read_rations(path: str | Path) -> list[RationLine]:
     """EZfeed's ration (recipe) export: a row per ration with its totals, then its ingredients
     (AF lb, DM lb, $ a head a day, DM %, $ a ton as fed)."""
-    rows = rows_of(path)
-    head = next((i for i, row in enumerate(rows) if row and row[0].lower() == "ration"), None)
-    if head is None:
+    rep = _io.read_ezfeed(path, flexible=True)
+    if rep is None or rep["kind"] != "rations":
         raise ValueError(f"{path}: not EZfeed's ration report (no 'Ration, Ingredient' header row)")
-    lines, ration = [], None
-    for row in rows[head + 1:]:
-        if not any(row):
-            continue
-        cell = lambda i: row[i] if i < len(row) else ""
-        if cell(0):
-            ration = cell(0)
-            continue
-        if ration and cell(1):
-            lines.append(RationLine(ration, cell(1), number(cell(2)), number(cell(3)), number(cell(4)),
-                                    number(cell(5)), number(cell(6))))
-    return lines
+    return [
+        RationLine(
+            ration=r["ration"],
+            ingredient=r["ingredient"],
+            as_fed_lb=r["as_fed_lb_per_head"],
+            dm_lb=r["dm_lb_per_head"],
+            cost_hd=r["cost_per_head"],
+            dm_pct=r["dm_pct"],
+            price_ton_as_fed=r["as_fed_cost_per_ton"],
+        )
+        for r in rep["rows"]
+    ]
 
 
 # --- Figures worked out here, from raw records -----------------------------------------------------------------------
 
 def ecm_lb(milk_lb: float, fat_pct: float, protein_pct: float) -> float:
     """Energy-corrected milk, lb (Tyrrell and Reid, 1965, as DHIA uses it)."""
-    return 0.327 * milk_lb + 12.95 * milk_lb * fat_pct / 100 + 7.65 * milk_lb * protein_pct / 100
+    return _stats.ecm_lb(milk_lb, fat_pct, protein_pct)
 
 
-def mean(values) -> float | None:
-    values = [v for v in values if v is not None]
-    return math.fsum(values) / len(values) if values else None   # the same answer on every Python
+mean = _stats.mean
 
 
 def percentiles(values, qs=(0.1, 0.5, 0.9)) -> tuple[float, ...] | None:
     """Linear-interpolated percentiles (the spread a pen card shows: low tenth, middle cow, high tenth)."""
-    values = sorted(v for v in values if v is not None)
-    if not values:
+    vals = _stats.clean(values)
+    if not vals:
         return None
-
-    def at(q: float) -> float:
-        position = (len(values) - 1) * q
-        low = int(position)
-        high = min(low + 1, len(values) - 1)
-        return values[low] + (values[high] - values[low]) * (position - low)
-
-    return tuple(at(q) for q in qs)
+    return tuple(_stats.quantile(vals, q) for q in qs)
 
 
 def quartiles(values) -> tuple[float, float, float] | None:

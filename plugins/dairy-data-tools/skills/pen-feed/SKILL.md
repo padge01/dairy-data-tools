@@ -15,13 +15,14 @@ Summary or Ingredient Intake report in the same folder (see the ezfeed-exports s
 `scripts/` is in this skill's own folder, next to this SKILL.md (`${CLAUDE_SKILL_DIR}/scripts` where the agent fills that in): give that full path, or run from the skill's folder.
 
 ```
-python scripts/dairy.py pen-feed --folder "Farm Exports" [--milk-price 21.50] [--days 7] [--pen 21]
-python scripts/dairy.py loading  --folder "Farm Exports" [--by ingredient|pen|feeder] [--days 14]
-python scripts/dairy.py refusals --folder "Farm Exports" [--days 7]
+python scripts/dairy.py pen-feed    --folder "Farm Exports" [--milk-price 21.50] [--days 7] [--pen 21]
+python scripts/dairy.py loading     --folder "Farm Exports" [--by ingredient|pen|feeder] [--days 14]
+python scripts/dairy.py refusals    --folder "Farm Exports" [--days 7]
 python scripts/dairy.py consistency --folder "Farm Exports" [--days 14]
+python scripts/dairy.py ration-lab  --folder "Farm Exports" --pen 21 [--days 7]  # offline handoff for Dairy Ration Lab
 ```
 
-Ask for the milk price ($ per cwt) before working out IOFC; never assume one. `--json out.json` gives every figure.
+To balance or reformulate a pen's ration, hand the `ration-lab` output to the `balance-ration` skill (Dairy Ration Lab at https://lab.dairydatascience.com or `https://mcp.dairydatascience.com`). Ask for the milk price ($ per cwt) before working out IOFC; never assume one. `--json out.json` gives every figure.
 
 Herds that weigh milk at every milking but don't test: the scripts use each cow's latest daily weight (DMLK1) as her milk and say so; ECM, fat, protein and SCC stay blank, and feed efficiency is milk per lb of dry matter.
 

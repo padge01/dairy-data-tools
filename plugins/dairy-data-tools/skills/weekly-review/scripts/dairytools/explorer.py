@@ -8,6 +8,7 @@ import re
 from collections import Counter
 from datetime import timedelta
 
+from .errors import NotFoundError
 from .herd import Herd, pen_label
 from .stats import ecm_lb, median, p10_50_90
 
@@ -49,15 +50,14 @@ def _test(cows, milk_from="last test"):
 def herd_summary(herd: Herd) -> dict:
     status = {c["animal_id"]: herd.status(c) for c in herd.cows}
     n = Counter(status.values())
-    left_12 = sum(1 for c in herd.cows if c.get("left_date") and herd.as_of - timedelta(days=365) < c["left_date"]
-                  <= herd.as_of)
+    since_12 = herd.as_of - timedelta(days=365)
+    left_12 = sum(1 for c in herd.cows if c.get("left_date") and since_12 < c["left_date"] <= herd.as_of)
     calved = [c for c in herd.cows if status[c["animal_id"]] in ("milking", "dry")]
     milking = [c for c in calved if status[c["animal_id"]] == "milking"]
-    lact = []
-    for g in ("1", "2", "3+"):
-        lact.append({"lactation": g, "milking": sum(1 for c in milking if _lact_group(c) == g),
-                     "dry": sum(1 for c in calved if status[c["animal_id"]] == "dry" and _lact_group(c) == g)})
-    std_events = {e["std_event"] for e in herd.events}
+    lact_milking = Counter(_lact_group(c) for c in milking)
+    lact_dry = Counter(_lact_group(c) for c in calved if status[c["animal_id"]] == "dry")
+    lact = [{"lactation": g, "milking": lact_milking[g], "dry": lact_dry[g]} for g in ("1", "2", "3+")]
+    std_events = set(herd.events_by_std) if herd.events_by_std else {e["std_event"] for e in herd.events}
     return {"as_of": herd.as_of.isoformat(), "milking": n["milking"], "dry": n["dry"], "heifers": n["heifer"],
             "left_last_12_months": left_12,
             "median_dim": median(c["days_in_milk"] for c in milking),
@@ -69,7 +69,7 @@ def herd_summary(herd: Herd) -> dict:
             "source": herd.source_line()}
 
 
-def _pen_row(herd, cows, pen):
+def _pen_row(herd: Herd, cows, pen: str):
     st = Counter(herd.status(c) for c in cows)
     milking = [c for c in cows if herd.status(c) == "milking"]
     kind = max(st, key=st.get) if cows and max(st.values()) > len(cows) / 2 else "mixed"
@@ -90,44 +90,56 @@ def pen_order(labels):
 
 
 def pen_summary(herd: Herd) -> list[dict]:
-    now = herd.in_herd()
-    return [_pen_row(herd, [c for c in now if c["pen"] == p], p) for p in pen_order(c["pen"] for c in now)]
+    by_pen = herd.cows_by_pen
+    return [_pen_row(herd, by_pen[p], p) for p in pen_order(by_pen)]
 
 
 def pen_card(herd: Herd, pen, days: int = 30) -> dict:
     pen = pen_label(pen)
-    now = herd.in_herd()
-    cows = [c for c in now if c["pen"] == pen]
+    cows = herd.cows_by_pen.get(pen, [])
     if not cows:
-        raise SystemExit(f"No animals in pen {pen}. The herd's pens: {', '.join(pen_order(c['pen'] for c in now))}.")
+        raise NotFoundError(f"No animals in pen {pen}. The herd's pens: {', '.join(pen_order(herd.cows_by_pen))}.")
     milking = [c for c in cows if herd.status(c) == "milking"]
-    ids = {c["animal_id"] for c in cows}
     since = herd.as_of - timedelta(days=days)
-    recent = [e for e in herd.events if e["animal_id"] in ids and since < e["event_date"] <= herd.as_of]
-    health = Counter(e["std_event"] for e in recent if e["category"] == "health")
-    health_cows = {k: len({e["animal_id"] for e in recent if e["std_event"] == k}) for k in health}
+    recent = [e for c in cows for e in herd.events_by_animal.get(c["animal_id"], ())
+              if since < e["event_date"] <= herd.as_of]
+    health = Counter()
+    health_cows: dict[str, set[str]] = {}
+    moved_in: set[str] = set()
+    fresh_in: set[str] = set()
+    for e in recent:
+        std = e["std_event"]
+        if e["category"] == "health" and std:
+            health[std] += 1
+            health_cows.setdefault(std, set()).add(e["animal_id"])
+        if std == "pen_move":
+            moved_in.add(e["animal_id"])
+        elif std == "calving":
+            fresh_in.add(e["animal_id"])
     groups = Counter("Heifer" if herd.status(c) == "heifer" else _lact_group(c) for c in cows)
     return {"pen": pen, "as_of": herd.as_of.isoformat(), "days": days, "summary": _pen_row(herd, cows, pen),
             "test": _test(milking, herd.milk_words),
             "lactation": [{"lactation": g, "cows": groups[g]} for g in ("Heifer", "1", "2", "3+") if groups[g]],
             "repro": repro_split([c for c in cows if herd.status(c) != "heifer"]),
             "dim": p10_50_90([c["days_in_milk"] for c in milking]),
-            "health": [{"event": k.replace("_", " "), "events": v, "cows": health_cows[k]} for k, v in health.most_common()],
-            "moved_in": len({e["animal_id"] for e in recent if e["std_event"] == "pen_move"}),
-            "fresh_in": len({e["animal_id"] for e in recent if e["std_event"] == "calving"}),
+            "health": [{"event": k.replace("_", " "), "events": v, "cows": len(health_cows[k])}
+                       for k, v in sorted(health.items(), key=lambda kv: (-kv[1], kv[0]))],
+            "moved_in": len(moved_in),
+            "fresh_in": len(fresh_in),
             "source": herd.source_line()}
 
 
 def cow_record(herd: Herd, cow, gestation: int = 280) -> dict:
     cow = str(cow).strip()
-    hits = [c for c in herd.cows if c["animal_id"] == cow] or [c for c in herd.cows if c["cow_id"] == cow]
+    exact = herd.cow_by_animal.get(cow)
+    hits = [exact] if exact is not None else list(herd.cows_by_id.get(cow, ()))
     if not hits:
-        raise SystemExit(f"No cow {cow} in this herd.")
+        raise NotFoundError(f"No cow {cow} in this herd.")
     hits.sort(key=lambda c: (bool(c.get("left_date")), -(c["left_date"].toordinal() if c.get("left_date") else 0)))
     me, others = hits[0], [c["animal_id"] for c in hits[1:]]
     status = herd.status(me)
     fresh = me.get("fresh_date")
-    ev = sorted((e for e in herd.events if e["animal_id"] == me["animal_id"]), key=lambda e: e["event_date"])
+    ev = herd.events_by_animal.get(me["animal_id"], ())
     current = [e for e in ev if fresh and e["event_date"] >= fresh]
     timeline = []
     if fresh:
@@ -160,6 +172,7 @@ def cow_record(herd: Herd, cow, gestation: int = 280) -> dict:
     ecm = ecm_lb(me.get("test_milk"), me.get("test_fat_pct"), me.get("test_protein_pct"))
     if ecm:
         tests.append({"measure": "ECM (worked out here)", "value": round(ecm, 1), "unit": "lb"})
+    lacts = herd.lactations_by_animal.get(me["animal_id"], ())
     return {"cow": me["cow_id"], "animal_id": me["animal_id"], "status": status, "pen": me.get("pen"),
             "lactation": me.get("lactation"), "days_in_milk": me.get("days_in_milk"), "as_of": herd.as_of.isoformat(),
             "timeline": [{"what": w, "date": d.isoformat(), "days_in_milk": (d - fresh).days if fresh else None}
@@ -171,5 +184,5 @@ def cow_record(herd: Herd, cow, gestation: int = 280) -> dict:
             "lactations": [{"lactation": l["lactation"], "fresh": l["fresh_date"].isoformat(),
                             "ended": l["end_date"].isoformat() if l["end_date"] else None, "how": l["end_reason"],
                             "services": l["services"], "days_open": l["days_open"]}
-                           for l in herd.lactations if l["animal_id"] == me["animal_id"]],
+                           for l in lacts],
             "number_also_used_by": others}

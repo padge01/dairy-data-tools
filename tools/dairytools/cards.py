@@ -14,6 +14,7 @@ from collections import defaultdict
 from datetime import date, timedelta
 
 from . import explorer, feeding, nutrients
+from .errors import DairyToolsError
 from .herd import Herd
 from .stats import ecm_lb, mean, quantile
 
@@ -474,7 +475,7 @@ def pen_card_html(herd: Herd, pen, pen_milk: dict | None = None, days: int = 75,
     pc = explorer.pen_card(herd, pen)
     t = pc["test"]
     pen = pc["pen"]
-    cows = [c for c in herd.in_herd() if c["pen"] == pen]
+    cows = herd.cows_by_pen.get(pen, [])
     milking = [c for c in cows if herd.status(c) == "milking"]
     end = herd.as_of
     start = end - timedelta(days=days - 1)
@@ -483,7 +484,7 @@ def pen_card_html(herd: Herd, pen, pen_milk: dict | None = None, days: int = 75,
         try:
             rows = feeding.pen_feed(herd, days=7, pen=pen)["pens"]
             feed = rows[0] if rows else None
-        except SystemExit:
+        except DairyToolsError:
             feed = None
     # Tiles.
     milk_vals = [c["test_milk"] for c in milking if (c.get("test_milk") or 0) > 0]

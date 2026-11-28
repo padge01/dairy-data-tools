@@ -18,6 +18,7 @@ together in one folder first):
 
 ```
 python scripts/dairy.py files --folder "Farm Exports"        # which file is which, and what's missing
+python scripts/dairy.py audit --folder "Farm Exports"        # record-quality and completeness checks
 python scripts/dairy.py herd  --folder "Farm Exports"        # the herd now
 python scripts/dairy.py pens  --folder "Farm Exports"        # one line per pen
 python scripts/dairy.py pen   --folder "Farm Exports" --pen 21 [--days 30]

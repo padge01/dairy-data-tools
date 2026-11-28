@@ -239,12 +239,30 @@ def test_sample_herd_pen_21_is_the_decks(tmp_path):
 
 def test_every_command_runs_on_the_sample_herd(tmp_path):
     for cmd in ("files", "commands", "items", "herd", "pens", "pen-feed", "loading", "fresh", "components", "udder",
-                "repro", "exits", "weekly"):
+                "scc-screen", "scc-dynamics", "mastitis", "repro", "pregnancy-rate", "first-service", "pregnant-by",
+                "time-to-pregnancy", "pregnancy-loss", "calving-interval", "age-first-calving", "conception",
+                "inter-service", "dry-period", "left-reasons", "left-herd", "survival", "calving", "audit",
+                "lactations", "exits", "weekly"):
         code, out = run(DAIRY, cmd, "--folder", HERD, "--milk-price", "21.5", "--json", tmp_path / f"{cmd}.json")
         assert code == 0, f"{cmd}: {out}"
         json.loads((tmp_path / f"{cmd}.json").read_text())
+    code, out = run(DAIRY, "ration-lab", "--folder", HERD, "--pen", "21", "--json", tmp_path / "rl.json")
+    assert code == 0 and "lab.dairydatascience.com" in out, out
+    code, out = run(DAIRY, "disease-effects", "--folder", HERD, "--event", "metritis", "--json", tmp_path / "de.json")
+    assert code == 0, out
+    code, out = run(DAIRY, "event-months", "--folder", HERD, "--event", "metritis", "--json", tmp_path / "em.json")
+    assert code == 0, out
+    code, out = run(DAIRY, "risk-ratio", "--folder", HERD, "--outcome", "metritis", "--exposure", "retained_placenta",
+                    "--json", tmp_path / "rr.json")
+    assert code == 0, out
+    code, out = run(DAIRY, "mh-rr", "--folder", HERD, "--outcome", "metritis", "--exposure", "retained_placenta",
+                    "--json", tmp_path / "mh.json")
+    assert code == 0, out
     code, out = run(DAIRY, "cow", "--folder", HERD, "--cow", "3004")   # a pregnant cow in pen 21
     assert code == 0 and "Calved" in out and "Due" in out
+    # Bad --as-of fails cleanly instead of silently ignoring
+    code, out = run(DAIRY, "herd", "--folder", HERD, "--as-of", "2026/10/01")
+    assert code != 0 and "Could not parse --as-of" in out
 
 
 def test_sample_herd_ration_change_is_found_and_about_half_is_the_season(tmp_path):
@@ -286,6 +304,16 @@ def test_no_agai_mention_in_the_public_plugin():
         if p.is_file() and p.suffix in {".md", ".py", ".json", ".csv"}:
             text = p.read_text(encoding="utf-8", errors="replace")
             assert not re.search(r"\bagai\b", text, re.I), p
+
+
+def test_plugin_policy_no_download_commands_or_internal_names():
+    """Plugin directory policy: no npx, pip install, mcp add commands, no internal lab names, and no co-author trailers."""
+    forbidden = re.compile(r"\b(pip\s+install|npx\s+|mcp\s+add|mcp-add|rossow|vmtrc|co-authored-by)\b", re.I)
+    for p in PLUGIN.rglob("*"):
+        if p.is_file() and p.suffix in {".md", ".py", ".json", ".csv"}:
+            text = p.read_text(encoding="utf-8", errors="replace")
+            m = forbidden.search(text)
+            assert not m, f"{p}: forbidden text {m.group(0)!r}"
 
 
 def test_no_dairycomp_list_command_anywhere():
