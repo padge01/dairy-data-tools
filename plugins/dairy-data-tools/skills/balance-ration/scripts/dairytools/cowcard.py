@@ -9,7 +9,7 @@ from datetime import date, timedelta
 from . import explorer
 from .cards import CSS, esc, violin
 from .herd import Herd
-from .stats import ecm_lb
+from .stats import ecm_lb, quantile
 
 COW_CSS = """
 :root{--teal:#2f7f7a;--teal-t:rgba(47,127,122,.13);--rust:#b5532f;--rust-t:rgba(181,83,47,.12);--amber:#a7841f;
@@ -24,6 +24,10 @@ COW_CSS = """
 .ev i{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:7px;background:var(--line)}
 .ev i.repro{background:var(--teal)}.ev i.health{background:var(--rust)}
 .curve{margin:8px 0 2px}
+.curve-wrap{position:relative;padding-top:22px;margin-top:-18px}
+.curve-wrap svg{display:block}
+.violin-pad{padding:0 2%}
+.spread-ptr{display:block;margin-top:-1px}
 .cow{max-width:440px;margin:24px auto;background:var(--surface);border:1px solid var(--border);border-radius:18px;
 padding:18px 20px 14px}
 .nameline{display:flex;align-items:center;gap:8px;flex-wrap:wrap}.nameline h1{margin:0;font-size:26px;font-weight:700}
@@ -35,54 +39,263 @@ font-size:12.5px;font-weight:600}.pill i{width:8px;height:8px;border-radius:50%;
 .dim{font-size:28px;font-weight:650}.dim small{font-size:14px;font-weight:600;margin-left:3px}
 .rank{font-size:13.5px;color:var(--text2);margin:4px 0 10px}.rank b{color:var(--text)}
 .cap{font-size:12.5px;color:var(--text2);margin:10px 0 2px}
+.strip-head{display:flex;justify-content:space-between;align-items:baseline;gap:8px;flex-wrap:wrap;margin:10px 0 2px}
+.strip-head .cap{margin:0}
+.strip-key{display:inline-flex;align-items:center;gap:9px;flex-wrap:wrap;font-size:11px;color:var(--text3)}
+.strip-key span{display:inline-flex;align-items:center;gap:4px}
+.strip-key i{display:inline-block;width:7px;height:7px;border-radius:50%}
+.strip-key i.health{background:var(--rust)}.strip-key i.repro{background:var(--teal)}.strip-key i.open{background:var(--amber)}
+.strip-key i.care{background:var(--blue)}.strip-key i.plan{background:var(--surface);border:1.5px solid var(--teal);box-sizing:border-box}
+.strip-key i.tick{width:2px;height:9px;border-radius:1px;background:var(--text3)}
+.strip-scroll{overflow-x:auto;-webkit-overflow-scrolling:touch;padding:24px 0 2px;margin:-20px 0 0;scrollbar-width:thin}
+.strip-inner{position:relative;min-width:100%}
+.strip-inner svg{display:block;width:100%;height:76px}
+.mark-hit,.pt-hit{position:absolute;transform:translate(-50%,-50%);cursor:pointer;outline:none;border-radius:999px;background:transparent}
+.mark-hit{top:38px;width:18px;height:26px}
+.pt-hit{width:18px;height:18px}
+.mark-hit::after,.pt-hit::after{content:"";position:absolute;left:50%;top:50%;width:14px;height:14px;border-radius:50%;
+transform:translate(-50%,-50%) scale(.7);border:2px solid var(--ink);opacity:0;transition:opacity .12s,transform .12s;pointer-events:none}
+.mark-hit:hover::after,.mark-hit:focus::after,.pt-hit:hover::after,.pt-hit:focus::after{opacity:.35;transform:translate(-50%,-50%) scale(1)}
+.mark-tip{position:absolute;bottom:calc(100% + 4px);left:50%;transform:translateX(-50%);background:var(--ink);color:var(--surface);
+font-size:11px;font-weight:500;line-height:1.25;padding:3px 7px;border-radius:6px;white-space:nowrap;
+box-shadow:0 2px 8px rgba(0,0,0,.18);opacity:0;pointer-events:none;transition:opacity .12s;z-index:20}
+.mark-hit.left .mark-tip,.pt-hit.left .mark-tip{left:-4px;transform:none}
+.mark-hit.right .mark-tip,.pt-hit.right .mark-tip{left:auto;right:-4px;transform:none}
+.mark-hit:hover .mark-tip,.mark-hit:focus .mark-tip,.pt-hit:hover .mark-tip,.pt-hit:focus .mark-tip{opacity:1}
+.strip-empty{font-size:12.5px;color:var(--text2);margin:10px 0 6px;padding:7px 10px;border-radius:9px;background:var(--raised)}
 .ctiles{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin:10px 0}
 .ctile{background:var(--raised);border-radius:9px;padding:5px 9px}.ctile .ck{display:block}.ctile .cv{font-size:15px}
-.evs:not(:empty){min-height:112px}.ev{display:grid;grid-template-columns:56px 1fr;gap:8px;font-size:13.5px;padding:4px 0;
-border-bottom:1px solid var(--subtle)}.ev b{font-weight:650}.ev span{color:var(--text2)}
-.more{font-size:12.5px;color:var(--text3);text-align:right;margin-top:4px}
+.evs:not(:empty){min-height:112px}.ev{display:grid;grid-template-columns:56px 1fr auto;align-items:baseline;gap:8px;font-size:13.5px;padding:4px 0;
+border-bottom:1px solid var(--subtle)}.ev b{font-weight:650}.ev span{color:var(--text2)}.ev .evdim{font-size:11.5px;color:var(--text3);font-variant-numeric:tabular-nums}
+.more-evs{margin-top:4px}
+.more-evs summary{list-style:none;cursor:pointer;font-size:12.5px;font-weight:500;color:var(--text2);text-align:right;padding:4px 0;user-select:none}
+.more-evs summary::-webkit-details-marker{display:none}
+.more-evs summary:hover{color:var(--text)}
+.more-evs summary::after{content:" ▾";font-size:11px}
+.more-evs[open] summary::after{content:" ▴"}
+.more-evs .more-list{max-height:240px;overflow-y:auto;padding-right:2px}
 """
 
 BREEDS = {"H": "Holstein", "J": "Jersey", "X": "Crossbred", "B": "Brown Swiss", "G": "Guernsey", "A": "Ayrshire"}
-EVENT_WORDS = {"calving": "Calved", "breeding": "Bred", "preg_positive": "Checked pregnant",
-               "preg_negative": "Checked open", "dry_off": "Dried off", "pen_move": "Moved",
-               "clinical_mastitis": "Clinical mastitis", "do_not_breed": "Do not breed", "to_close_up": "To close-up"}
+EVENT_WORDS = {
+    "calving": "Calved", "breeding": "Bred", "preg_positive": "Checked pregnant",
+    "preg_negative": "Checked open", "dry_off": "Dried off", "pen_move": "Moved",
+    "clinical_mastitis": "Clinical mastitis", "do_not_breed": "Do not breed", "to_close_up": "To close-up",
+    "ill_unspecified": "Sick", "lameness": "Lame", "metritis": "Metritis", "ketosis": "Ketosis",
+    "retained_placenta": "Retained placenta", "displaced_abomasum": "Displaced abomasum",
+    "milk_fever": "Milk fever", "abortion": "Aborted", "recovered": "Recovered",
+    "hoof_trim": "Hoof trim", "milk_culture": "Milk culture", "vaccination": "Vaccinated",
+    "treatment": "Treated", "note": "Note", "cleared": "Cleared",
+}
+SHORT_WORDS = {
+    "calving": "Calved", "breeding": "Bred", "preg_positive": "Preg", "preg_negative": "Open",
+    "dry_off": "Dry off", "pen_move": "Moved", "clinical_mastitis": "Mastitis", "do_not_breed": "DNB",
+    "to_close_up": "Close-up", "ill_unspecified": "Sick", "lameness": "Lame", "metritis": "Metritis",
+    "ketosis": "Ketosis", "retained_placenta": "RP", "displaced_abomasum": "DA", "milk_fever": "Milk fever",
+    "abortion": "Aborted", "recovered": "Recovered", "hoof_trim": "Hoof trim", "milk_culture": "Culture",
+    "vaccination": "Vax", "treatment": "Treated", "note": "Note", "cleared": "OK",
+}
 
 
 def ordinal(n) -> str:
     return f"{n}{'th' if 10 <= n % 100 <= 20 else {1: 'st', 2: 'nd', 3: 'rd'}.get(n % 10, 'th')}"
 
 
-def strip(steps, today: date, width=400) -> str:
-    """Her lactation as a line from calved to due, each step a labelled point; today the big dot."""
+def _event_tone(meaning: str | None, category: str | None) -> tuple[str, int]:
+    """Visual group and priority (lower = more important) for a lactation-timeline event mark."""
+    if category == "health" or meaning in ("abortion", "do_not_breed"):
+        return "health", 1
+    if meaning == "preg_positive":
+        return "repro", 2
+    if meaning == "breeding":
+        return "repro", 3
+    if meaning == "preg_negative":
+        return "open", 4
+    if meaning == "dry_off":
+        return "repro", 4
+    if meaning in ("recovered", "treatment", "hoof_trim", "milk_culture") or category == "procedure":
+        return "care", 5
+    if meaning == "pen_move" or category == "movement":
+        return "tick", 6
+    return "tick", 7
+
+
+def _event_short(e: dict) -> str:
+    m = e.get("std_event") or e.get("meaning")
+    raw = e.get("dc_event") or e.get("event") or ""
+    return SHORT_WORDS.get(m) or (m or raw).replace("_", " ").capitalize() or "Event"
+
+
+def _event_long(e: dict) -> str:
+    m = e.get("std_event") or e.get("meaning")
+    raw = e.get("dc_event") or e.get("event") or ""
+    return EVENT_WORDS.get(m) or (m or raw).replace("_", " ").capitalize() or "Event"
+
+
+def strip(steps, today: date, events=(), fresh: date | None = None, width: int = 400) -> str:
+    """Her lactation as a line from calved to today (or due), marking every event in between."""
     if not steps:
         return ""
-    first, last = steps[0][1], max(s[1] for s in steps)
+    # Group intermediate lactation events by date so same-day events share a single clean mark.
+    by_day: dict[date, list[dict]] = {}
+    bred_dates: list[date] = []
+    for e in events:
+        d = e.get("event_date")
+        if d is None:
+            continue
+        m = e.get("std_event")
+        if m == "calving" and fresh and d == fresh:
+            continue
+        if m == "breeding":
+            bred_dates.append(d)
+        by_day.setdefault(d, []).append(e)
+
+    # A bare 2-point line (only Calved -> Today) with no events or future milestones adds no signal.
+    has_future = any(kind == "future" for _, _, kind in steps)
+    if not by_day and not has_future and len(steps) <= 2:
+        if fresh:
+            return f"<div class='strip-empty'>Calved {fresh:%b} {fresh.day} · no events recorded since calving</div>"
+        return ""
+
+    all_dates = [s[1] for s in steps] + list(by_day.keys())
+    first, last = min(all_dates), max(all_dates)
     span = max((last - first).days, 1)
+    now = min(max(today, first), last)
 
-    def x(d):
-        return 12 + (d - first).days / span * (width - 24)
+    # Expand horizontally into a scrollable strip when many events crowd into a compressed past segment.
+    past_frac = (now - first).days / span
+    svg_w = width
+    if len(by_day) >= 5 and past_frac < 0.45:
+        svg_w = max(560, min(720, round(width * 0.46 / max(past_frac, 0.22))))
+    elif len(by_day) >= 12:
+        svg_w = max(560, min(720, len(by_day) * 44))
+    scrollable = svg_w > width
 
-    label = ", ".join(f"{w} {d:%b} {d.day}" for w, d, _ in steps)
-    now = min(today, last)
-    out = [f'<svg viewBox="0 0 {width} 70" width="100%" role="img" aria-label="her lactation: {esc(label)}">',
-           f'<line x1="{x(first):.1f}" x2="{x(now):.1f}" y1="34" y2="34" stroke="var(--ink)" stroke-width="2.5"/>',
-           f'<line x1="{x(now):.1f}" x2="{x(last):.1f}" y1="34" y2="34" stroke="var(--bar)" stroke-width="2.5"/>']
-    placed = []
+    def x(d: date) -> float:
+        return 14 + (d - first).days / span * (svg_w - 28)
+
+    anchor_dates = {d for _, d, _ in steps}
+    last_bred = max(bred_dates) if bred_dates else None
+    bred_count = len(bred_dates)
+
+    # Build day marks sorted chronologically.
+    marks = []
+    seen_tones: set[str] = set()
+    for d in sorted(by_day):
+        day_evs = by_day[d]
+        scored = sorted(day_evs, key=lambda ev: _event_tone(ev.get("std_event"), ev.get("category"))[1])
+        lead = scored[0]
+        tone, prio = _event_tone(lead.get("std_event"), lead.get("category"))
+        seen_tones.add(tone)
+        short = _event_short(lead)
+        if lead.get("std_event") == "breeding" and d == last_bred and bred_count > 1:
+            short = f"Bred ×{bred_count}"
+        dim_txt = f" · {(d - fresh).days} DIM" if fresh else ""
+        names = ", ".join(dict.fromkeys(_event_long(ev) for ev in scored))
+        tip = f"{d:%b} {d.day}{dim_txt} · {names}"
+        marks.append({"date": d, "x": x(d), "tone": tone, "prio": prio, "short": short, "tip": tip,
+                      "is_anchor": d in anchor_dates})
+    if has_future:
+        seen_tones.add("plan")
+
+    legend_bits = []
+    for key, text in (("health", "Health"), ("repro", "Repro"), ("open", "Open"),
+                      ("care", "Care"), ("tick", "Move / note"), ("plan", "Planned")):
+        if key in seen_tones:
+            legend_bits.append(f"<span><i class='{key}'></i>{text}</span>")
+    if scrollable:
+        legend_bits.append("<span>↔ Scroll</span>")
+    head = (f"<div class='strip-head'><span class='cap'>This lactation</span>"
+            f"{'<span class=\"strip-key\">' + ''.join(legend_bits) + '</span>' if legend_bits else ''}</div>")
+
+    label_parts = [f"{w} {d:%b} {d.day}" for w, d, _ in steps]
+    label_parts += [m["tip"] for m in marks[:6]]
+    inner_style = f"width:{svg_w}px" if scrollable else "width:100%"
+    out = [head,
+           f"<div class='strip-scroll'><div class='strip-inner' style='{inner_style}'>",
+           f'<svg viewBox="0 0 {svg_w} 76" width="{svg_w}" height="76" role="img" aria-label="her lactation: {esc("; ".join(label_parts))}">',
+           f'<line x1="{x(first):.1f}" x2="{x(now):.1f}" y1="38" y2="38" stroke="var(--ink)" stroke-width="2.5" stroke-linecap="round"/>']
+    if last > now:
+        out.append(f'<line x1="{x(now):.1f}" x2="{x(last):.1f}" y1="38" y2="38" stroke="var(--bar)" '
+                   f'stroke-width="2.5" stroke-dasharray="4 3" stroke-linecap="round"/>')
+
+    # Draw intermediate event marks (ticks first, then colored dots so health/repro stay on top).
+    tone_color = {"health": "var(--rust)", "repro": "var(--teal)", "open": "var(--amber)",
+                  "care": "var(--blue)", "tick": "var(--text3)"}
+    hits: list[tuple[float, str]] = []
+    for m in sorted(marks, key=lambda item: -item["prio"]):
+        if m["is_anchor"]:
+            continue
+        cx = m["x"]
+        hits.append((cx, m["tip"]))
+        if m["tone"] == "tick":
+            out.append(f'<line x1="{cx:.1f}" x2="{cx:.1f}" y1="33.5" y2="42.5" stroke="var(--text3)" '
+                       f'stroke-width="1.8" stroke-linecap="round"/>')
+        else:
+            r = 4.6 if m["tone"] in ("health", "repro", "open") else 3.8
+            col = tone_color[m["tone"]]
+            out.append(f'<circle cx="{cx:.1f}" cy="38" r="{r}" fill="{col}" stroke="var(--surface)" stroke-width="1.6"/>')
+
+    # Draw milestone anchors and place their labels first.
+    placed_top: list[float] = []
+    placed_bot: list[float] = []
     for i, (what, d, kind) in enumerate(steps):
         cx = x(d)
-        r = 8 if kind == "today" else 6
-        fill = "var(--ink)" if kind == "today" else ("var(--teal)" if d <= today else "var(--surface)")
-        stroke = "var(--ink)" if kind == "today" else "var(--teal)"
-        out.append(f'<circle cx="{cx:.1f}" cy="34" r="{r}" fill="{fill}" stroke="{stroke}" stroke-width="2"/>')
-        anchor = "start" if i == 0 else "end" if i == len(steps) - 1 else "middle"
-        crowded = any(abs(cx - p) < 46 for p in placed)
-        placed.append(cx)
-        weight = "650" if kind == "today" else "400"
-        out.append(f'<text x="{cx:.1f}" y="{14 if not crowded else 66}" font-size="12.5" text-anchor="{anchor}" '
-                   f'class="lab" font-weight="{weight}">{esc(what)}</text>')
+        r = 7 if kind in ("today", "left") else 5.8
+        if kind == "today":
+            fill, stroke = "var(--ink)", "var(--ink)"
+        elif kind == "left":
+            fill, stroke = "var(--rust)", "var(--rust)"
+        elif kind == "future":
+            fill, stroke = "var(--surface)", "var(--teal)"
+        else:
+            fill, stroke = "var(--teal)", "var(--teal)"
+        dim_txt = f" · {(d - fresh).days} DIM" if fresh and d >= fresh else ""
+        extra_day = by_day.get(d, [])
+        extra_txt = " · " + ", ".join(dict.fromkeys(_event_long(ev) for ev in extra_day)) if extra_day else ""
+        hits.append((cx, f"{what} · {d:%b} {d.day}{dim_txt}{extra_txt}"))
+        out.append(f'<circle cx="{cx:.1f}" cy="38" r="{r}" fill="{fill}" stroke="{stroke}" stroke-width="2"/>')
+        anchor = "start" if cx < 30 else "end" if cx > svg_w - 30 else "middle"
+        crowded = any(abs(cx - p) < 46 for p in placed_top)
+        weight = "650" if kind in ("today", "left") else "500"
         if not crowded:
-            out.append(f'<text x="{cx:.1f}" y="60" font-size="12" text-anchor="{anchor}">{d:%b} {d.day}</text>')
+            placed_top.append(cx)
+            out.append(f'<text x="{cx:.1f}" y="15" font-size="11.5" text-anchor="{anchor}" '
+                       f'class="lab" font-weight="{weight}">{esc(what)}</text>')
+            if not any(abs(cx - p) < 44 for p in placed_bot):
+                placed_bot.append(cx)
+                out.append(f'<text x="{cx:.1f}" y="63" font-size="11" text-anchor="{anchor}">{d:%b} {d.day}</text>')
+        elif not any(abs(cx - p) < 46 for p in placed_bot):
+            placed_bot.append(cx)
+            out.append(f'<text x="{cx:.1f}" y="68" font-size="11" text-anchor="{anchor}" '
+                       f'class="lab" font-weight="{weight}">{esc(what)}</text>')
+
+    # Place labels for highest-priority intermediate events wherever there is clean breathing room.
+    for m in sorted(marks, key=lambda item: (item["prio"], item["date"])):
+        if m["is_anchor"] or m["prio"] >= 7:
+            continue
+        cx = m["x"]
+        if cx < 34 or cx > svg_w - 34:
+            continue
+        if any(abs(cx - p) < 52 for p in placed_top):
+            continue
+        placed_top.append(cx)
+        col = tone_color[m["tone"]] if m["tone"] in ("health", "repro", "open") else "var(--text)"
+        out.append(f'<line x1="{cx:.1f}" x2="{cx:.1f}" y1="20" y2="31" stroke="var(--subtle)" stroke-width="1"/>')
+        out.append(f'<text x="{cx:.1f}" y="15" font-size="11" text-anchor="middle" '
+                   f'style="fill:{col}" font-weight="600">{esc(m["short"])}</text>')
+        if not any(abs(cx - p) < 46 for p in placed_bot):
+            placed_bot.append(cx)
+            out.append(f'<text x="{cx:.1f}" y="63" font-size="10.5" text-anchor="middle">{m["date"]:%b} {m["date"].day}</text>')
+
     out.append("</svg>")
+    # Pure-CSS hover & tap tooltips aligned directly over each dot/tick (zero JS).
+    for cx, tip in hits:
+        pct = cx / svg_w * 100
+        edge = " left" if pct < 22 else " right" if pct > 78 else ""
+        out.append(f"<span class='mark-hit{edge}' tabindex='0' style='left:{pct:.2f}%' aria-label='{esc(tip)}'>"
+                   f"<span class='mark-tip'>{esc(tip)}</span></span>")
+    out.append("</div></div>")
     return "".join(out)
 
 
@@ -97,7 +310,7 @@ def milk_curve(points, dim_now, kind: str, width=400, height=132) -> str:
     x = lambda d: pad_l + d / xmax * (width - pad_l - pad_r)
     y = lambda v: top + (height - top - bottom) * (1 - v / ymax)
     line = " ".join(f"{x(d):.1f},{y(v):.1f}" for d, v in pts)
-    out = [f'<svg viewBox="0 0 {width} {height}" width="100%" role="img" aria-label="her milk this lactation">']
+    out = [f"<div class='curve-wrap'><svg viewBox='0 0 {width} {height}' width='100%' role='img' aria-label='her milk this lactation'>"]
     v = 0
     while v <= ymax:
         out.append(f'<line x1="{pad_l}" x2="{width - pad_r}" y1="{y(v):.1f}" y2="{y(v):.1f}" stroke="var(--subtle)"/>'
@@ -114,7 +327,21 @@ def milk_curve(points, dim_now, kind: str, width=400, height=132) -> str:
                f'{v:.0f}</tspan> lb</text>')
     for t in range(0, int(xmax) + 1, 100):
         out.append(f'<text x="{x(t):.1f}" y="{height - 5}" font-size="10.5" text-anchor="middle">{t}</text>')
-    return "".join(out) + "</svg>"
+    out.append("</svg>")
+    # Pure-CSS hover & tap tooltips on milk-curve points (sample up to ~20 points for daily weights).
+    step = max(1, len(pts) // 20) if kind != "test" else 1
+    shown = pts[::step]
+    if pts[-1] not in shown:
+        shown.append(pts[-1])
+    for d, v in shown:
+        xp = x(d) / width * 100
+        yf = y(v) / height
+        edge = " left" if xp < 22 else " right" if xp > 78 else ""
+        tip = f"{d} DIM · {v:.0f} lb"
+        out.append(f"<span class='pt-hit{edge}' tabindex='0' style='left:{xp:.2f}%;top:calc(22px + (100% - 22px) * {yf:.4f})' "
+                   f"aria-label='{esc(tip)}'><span class='mark-tip'>{esc(tip)}</span></span>")
+    out.append("</div>")
+    return "".join(out)
 
 
 def cow_card_html(herd: Herd, cow, gestation: int = 280) -> str:
@@ -157,26 +384,33 @@ def cow_card_html(herd: Herd, cow, gestation: int = 280) -> str:
     spread = ""
     if pen_milk and me.get("test_milk"):
         lo, hi = min(pen_milk), max(pen_milk)
-        xm = 400 * (me["test_milk"] - lo) / ((hi - lo) or 1)
+        med = quantile(sorted(pen_milk), 0.5)
+        pct = (me["test_milk"] - lo) / ((hi - lo) or 1)
+        xm = 8 + pct * (400 - 16)
+        anchor = "start" if xm < 56 else "end" if xm > 344 else "middle"
+        lx = max(3, xm - 5.5) if anchor == "start" else min(397, xm + 5.5) if anchor == "end" else xm
         spread = (f"<div class='cap'>Her milk against pen {esc(me['pen'])}, {herd.milk_words} (lb)</div>"
-                  f"{violin(pen_milk, 'pen milk', ' lb', width=400, height=40)}"
-                  f"<svg viewBox='0 0 400 16' width='100%' height='16' aria-hidden='true'>"
-                  f"<polygon points='{xm - 6:.1f},14 {xm + 6:.1f},14 {xm:.1f},3' fill='var(--ink)'/></svg>"
-                  f"<div class='sub'>Lowest {lo:.0f} · her {me['test_milk']:.0f} · highest {hi:.0f}</div>")
+                  f"<div class='violin-pad'>{violin(pen_milk, 'pen milk', ' lb', width=400, height=40)}</div>"
+                  f"<svg class='spread-ptr' viewBox='0 0 400 26' width='100%' height='26' aria-hidden='true'>"
+                  f"<polygon points='{xm - 5.5:.1f},10 {xm + 5.5:.1f},10 {xm:.1f},2' fill='var(--ink)'/>"
+                  f"<text x='{lx:.1f}' y='23' font-size='11' font-weight='650' text-anchor='{anchor}' "
+                  f"style='fill:var(--ink)'>Her {me['test_milk']:.0f} lb</text></svg>"
+                  f"<div class='sub'>Lowest {lo:.0f} · pen median {med:.0f} · highest {hi:.0f}</div>")
 
     steps = []
+    lact_events = []
     if fresh:
+        lact_events = [e for e in herd.events_by_animal.get(me["animal_id"], ()) if e["event_date"] >= fresh]
         steps.append(("Calved", fresh, "past"))
-        bred = [e["event_date"] for e in herd.events_by_animal.get(me["animal_id"], ())
-                if e["std_event"] == "breeding" and e["event_date"] >= fresh]
-        if bred:
-            steps.append(("Bred" if len(bred) == 1 else f"Bred ×{len(bred)}", bred[-1], "past"))
-        steps.append(("Today", today, "today"))
-        if pregnant:
-            due = conceived + timedelta(days=gestation)
-            if status != "dry":
-                steps.append(("Dry off", due - timedelta(days=60), "future"))
-            steps.append(("Due", due, "future"))
+        if me.get("left_date") and me["left_date"] >= fresh:
+            steps.append(("Left", me["left_date"], "left"))
+        else:
+            steps.append(("Today", today, "today"))
+            if pregnant:
+                due = conceived + timedelta(days=gestation)
+                if status != "dry":
+                    steps.append(("Dry off", due - timedelta(days=60), "future"))
+                steps.append(("Due", due, "future"))
         steps.sort(key=lambda s: s[1])
 
     tiles = []
@@ -207,13 +441,23 @@ def cow_card_html(herd: Herd, cow, gestation: int = 280) -> str:
                   f"</div><div class='curve'>{curve}</div>" if curve else "")
 
     events = list(reversed(rec["events_this_lactation"]))
-    rows = []
-    for e in events[:4]:
+    def _ev_row(e: dict) -> str:
         d = date.fromisoformat(e["date"])
         words = EVENT_WORDS.get(e["meaning"]) or (e["meaning"] or e["event"] or "").replace("_", " ").capitalize()
-        rows.append(f"<div class='ev'><span>{d:%b} {d.day}</span><div><i class='{esc(e.get('category') or '')}'>"
-                    f"</i><b>{esc(words)}</b></div></div>")
-    more = f"<div class='more'>+{len(events) - 4} earlier this lactation</div>" if len(events) > 4 else ""
+        dot_cls = "health" if e.get("meaning") in ("abortion", "do_not_breed") else (e.get("category") or "")
+        ev_dim = e.get("days_in_milk")
+        if ev_dim is None and fresh:
+            ev_dim = (d - fresh).days
+        dim_cell = f"<span class='evdim'>{ev_dim} DIM</span>" if ev_dim is not None else "<span></span>"
+        return (f"<div class='ev'><span>{d:%b} {d.day}</span><div><i class='{esc(dot_cls)}'>"
+                f"</i><b>{esc(words)}</b></div>{dim_cell}</div>")
+
+    rows = [_ev_row(e) for e in events[:4]]
+    more = ""
+    if len(events) > 4:
+        rest = "".join(_ev_row(e) for e in events[4:])
+        more = (f"<details class='more-evs'><summary>+{len(events) - 4} earlier this lactation</summary>"
+                f"<div class='more-list'>{rest}</div></details>")
 
     dim = me.get("days_in_milk")
     dim_html = f"<div class='dim'>{dim}<small>DIM</small></div>" if dim is not None and status == "milking" else ""
@@ -223,7 +467,7 @@ def cow_card_html(herd: Herd, cow, gestation: int = 280) -> str:
             f"<style>{CSS}{COW_CSS}</style></head><body><div class='cow'>"
             f"<div class='nameline'><h1>Cow {esc(me['cow_id'])}</h1><span class='pill {tone}'><i></i>{esc(pill)}</span></div>"
             f"<div class='idsub'>{esc(sub)}</div><div class='figrow'><div class='big'>{big}</div>{dim_html}</div>"
-            f"<div class='rank'>{rank}</div>{spread}{curve_html}{strip(steps, today)}<div class='ctiles'>{tiles_html}</div>"
+            f"<div class='rank'>{rank}</div>{spread}{curve_html}{strip(steps, today, lact_events, fresh)}<div class='ctiles'>{tiles_html}</div>"
             f"<div class='evs'>{''.join(rows)}</div>{more}"
             f"<div class='foot'>From DairyComp's cow and event reports. Records end {today:%b %d, %Y}. "
             + ("Days in milk counted from her fresh date" if fresh else "Days in milk as DairyComp counts them (no fresh "
