@@ -159,12 +159,22 @@ class Herd:
         """milking, dry, heifer, left or unknown: one rule for every count (computed live so mutations never go stale)."""
         if cow.get("left_date"):
             return "left"
+        repro = (cow.get("repro_status") or "").strip().upper()
         lact = cow.get("lactation")
-        if lact is None or lact < 1:
-            return "heifer"
-        if (cow.get("repro_status") or "").upper() == "DRY" or cow.get("is_dry"):
+        if lact is not None:
+            if lact < 1:
+                return "heifer"
+            if repro == "DRY" or cow.get("is_dry"):
+                return "dry"
+            return "milking" if cow.get("days_in_milk") is not None else "unknown"
+        # Export omitted LACT: infer adult status from RPRO / dry date / positive DIM when present.
+        if repro == "DRY" or cow.get("is_dry"):
             return "dry"
-        return "milking" if cow.get("days_in_milk") is not None else "unknown"
+        if repro in ("HEIFER", "CALF"):
+            return "heifer"
+        if repro in ("FRESH", "OPEN", "OK/OPEN", "BRED", "PREG", "NO BRED") or (cow.get("days_in_milk") or 0) > 0 or cow.get("fresh_date"):
+            return "milking"
+        return "heifer"
 
     def in_herd(self) -> list[Cow]:
         return [c for c in self.cows if not c.get("left_date")]

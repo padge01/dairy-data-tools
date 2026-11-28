@@ -138,16 +138,20 @@ EVENTS: dict[str, tuple[str, str, str]] = {
     "INHOS": ("to_hospital", "procedure", "Moved into the hospital pen"),
     "HOSP": ("to_hospital", "procedure", "Hospitalised"),
     "WELL": ("recovered", "procedure", "Recovered, released"),
+    "WELLOUT": ("recovered", "procedure", "Recovered, released from hospital"),
+    "HOOF": ("hoof_trim", "procedure", "Hoof trimmed"),
     "HOOFTRM": ("hoof_trim", "procedure", "Hoof trimmed"),
     "FOOTBATH": ("footbath", "procedure", "Footbath (a procedure, not a lameness case)"),
     "CHECK": ("check", "observation", "Checked"),
     "OK": ("cleared", "observation", "Checked and cleared"),
+    "REMARK": ("note", "observation", "Farm note / remark"),
     "MOVE": ("pen_move", "movement", "Moved pen"),
     "SOLD": ("sold", "lifecycle", "Sold (leaves the herd)"),
     "DIED": ("died", "lifecycle", "Died (leaves the herd)"),
     "XID": ("renumbered", "lifecycle", "Renumbered"),
     "BORN": ("birth", "lifecycle", "Born on the farm"),
     "VACC": ("vaccination", "vaccination", "Vaccinated"),
+    "VAXED": ("vaccination", "vaccination", "Vaccinated"),
 }
 
 # Diseases counted around calving (first case per lactation within a window of days in milk).

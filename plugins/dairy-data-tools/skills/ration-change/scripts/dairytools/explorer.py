@@ -12,7 +12,7 @@ from .errors import NotFoundError
 from .herd import Herd, pen_label
 from .stats import ecm_lb, median, p10_50_90
 
-REPRO_LABELS = {"FRESH": "Fresh", "OPEN": "Open", "BRED": "Bred", "PREG": "Pregnant", "DRY": "Dry",
+REPRO_LABELS = {"FRESH": "Fresh", "OPEN": "Open", "OK/OPEN": "Open", "BRED": "Bred", "PREG": "Pregnant", "DRY": "Dry",
                 "NO BRED": "Do not breed"}
 TRANSITION = {"retained_placenta": "retained placenta", "metritis": "metritis", "ketosis": "ketosis",
               "displaced_abomasum": "displaced abomasum", "milk_fever": "milk fever",
@@ -29,7 +29,7 @@ def repro_split(cows):
     for c in cows:
         s = (c.get("repro_status") or "").strip().upper() or "Not recorded"
         counts[REPRO_LABELS.get(s, s)] += 1
-    order = list(REPRO_LABELS.values())
+    order = list(dict.fromkeys(REPRO_LABELS.values()))
     return [{"status": k, "cows": counts[k]} for k in order + sorted(set(counts) - set(order)) if counts[k]]
 
 
