@@ -7,7 +7,7 @@ from __future__ import annotations
 from datetime import date, timedelta
 
 from . import feeding, weekly
-from .cards import CSS, _recipe, esc, ration_bars
+from .cards import CSS, _recipe, esc, more_rows, ration_bars, tip
 from .errors import DairyToolsError
 from .herd import Herd
 
@@ -21,10 +21,14 @@ padding:22px 30px 16px}
 .t{padding:4px 0}.t .k{font-size:13.5px}.t .v{font-size:26px;margin:0}.t .v small{font-size:13.5px}
 .t .n{font-size:12.5px}
 .hb{display:grid;grid-template-columns:minmax(90px,max-content) 1fr;column-gap:12px;row-gap:7px;align-items:center}
+.hbr{display:grid;grid-column:1/-1;grid-template-columns:minmax(90px,max-content) 1fr;column-gap:12px;align-items:center}
+.more-rows .hb,.more-rows .div{margin:7px 0}
 .hb .l{font-size:14px;white-space:nowrap}.hb .track{display:flex;align-items:center;gap:8px;min-width:0}
 .hb .bar{height:16px;border-radius:3px;background:var(--bar);flex:0 0 auto}
 .hb .val{font-size:13.5px;font-weight:650;white-space:nowrap}.hb .val small{font-weight:400;color:var(--text2)}
 .div{display:grid;grid-template-columns:170px minmax(0,260px) minmax(0,260px) max-content;column-gap:0;row-gap:7px;align-items:center}
+.dvr{display:grid;grid-column:1/-1;grid-template-columns:170px minmax(0,260px) minmax(0,260px) max-content;align-items:center}
+.table-scroll .div{min-width:470px}.table-scroll .grid{min-width:400px}
 .div .l{font-size:14px;padding-right:10px}.div .neg{display:flex;justify-content:flex-end;border-right:1.5px solid var(--line)}
 .div .pos{display:flex;justify-content:flex-start}.div .bar{height:14px;background:var(--bar)}
 .div .neg .bar{border-radius:3px 0 0 3px}.div .pos .bar{border-radius:0 3px 3px 0}
@@ -43,7 +47,9 @@ background:var(--raised)}.grid .r{font-weight:600}
 .act{display:grid;grid-template-columns:24px 1fr auto;gap:8px;align-items:start;padding:8px 0;
 border-bottom:1px solid var(--subtle);font-size:15px}.act:last-child{border:0}.box{width:16px;height:16px;
 border:1.5px solid var(--line);border-radius:4px;margin-top:3px}.act .who{font-size:13px;color:var(--text2)}
-@media (max-width:820px){.two{grid-template-columns:1fr}.pen{grid-template-columns:1fr}.div{grid-template-columns:110px 1fr 1fr 96px}}
+@media (max-width:820px){.two{grid-template-columns:1fr}.pen{grid-template-columns:1fr}
+.div,.dvr{grid-template-columns:110px 1fr 1fr 96px}}
+@supports (grid-template-columns:subgrid){.hbr,.dvr{grid-template-columns:subgrid}}
 """
 
 
@@ -60,20 +66,25 @@ def tile(label, value, unit="", note="") -> str:
             + (f"<div class='n'>{esc(note)}</div>" if note else "") + "</div>")
 
 
-def hbars(rows, fmt="{:.1f}", unit="") -> str:
-    """rows: (label, value, extra words). Bars scaled to the largest; every bar carries its value in words."""
+def hbars(rows, fmt="{:.1f}", unit="", top: float | None = None) -> str:
+    """rows: (label, value, extra words). Bars scaled to the largest (or to `top`, so two lists share one scale);
+    every bar carries its value in words, and a hover, tap or Tab lights its row and shows them in one pill."""
     rows = [r for r in rows if r[1] is not None]
     if not rows:
         return "<p class='muted'>Nothing recorded.</p>"
-    top = max(r[1] for r in rows) or 1
+    top = top or max(r[1] for r in rows) or 1
     room = 50 if any(r[2] for r in rows) else 78   # leave room for the words after the bar
     out = []
     for label, value, extra in rows:
         width = max(2.0, room * value / top)
-        out.append(f"<div class='l'>{esc(label)}</div><div class='track'><div class='bar' style='width:{width:.1f}%'>"
-                   f"</div><span class='val'>{esc(fmt.format(value))}{esc(unit)}"
-                   + (f" <small>{esc(extra)}</small>" if extra else "") + "</span></div>")
+        words = f"{esc(label)}: {esc(fmt.format(value))}{esc(unit)}" + (f" · {esc(extra)}" if extra else "")
+        out.append(f"<div class='hbr tip-row' tabindex='0'><div class='l'>{esc(label)}</div><div class='track'>"
+                   f"<div class='bar' style='width:{width:.1f}%'></div><span class='val'>{esc(fmt.format(value))}{esc(unit)}"
+                   + (f" <small>{esc(extra)}</small>" if extra else "") + f"</span></div>{tip(words)}</div>")
     return f"<div class='hb'>{''.join(out)}</div>"
+
+
+DIV_OPEN = "<div class='div'>"
 
 
 def _money(v):
@@ -124,7 +135,7 @@ def pen_feed_html(herd: Herd, milk_price: float | None = None, days: int = 7, sl
     cwt = hbars([(f"Pen {p['pen']}", p.get("feed_cost_per_cwt"), "") for p in pens], fmt="${:.2f}")
     loading = "<p class='muted'>No Ingredient Intake report in the folder.</p>"
     try:
-        la = feeding.loading_accuracy(herd, by="ingredient", days=14)["rows"][:8]
+        la = feeding.loading_accuracy(herd, by="ingredient", days=14)["rows"]   # the largest miss first
         top = max(abs(r["mean_deviation_pct"]) for r in la) or 1
         rows = []
         for r in la:
@@ -133,10 +144,16 @@ def pen_feed_html(herd: Herd, milk_price: float | None = None, days: int = 7, sl
             neg = f"<div class='bar' style='width:{w:.1f}%'></div>" if d < 0 else ""
             pos = f"<div class='bar' style='width:{w:.1f}%'></div>" if d >= 0 else ""
             lb = f" · {r['mean_deviation_lb']:+.2f} lb" if abs(r["mean_deviation_lb"]) >= .005 else ""
-            rows.append(f"<div class='l'>{esc(r['ingredient'])}</div><div class='neg'>{neg}</div><div class='pos'>{pos}"
-                        f"</div><div class='val'>{d:+.1f}%{esc(lb)}</div>")
-        loading = (f"<div class='div'><div></div><div class='axis' style='text-align:right;padding-right:6px'>under"
-                   f"</div><div class='axis' style='padding-left:6px'>over</div><div></div>{''.join(rows)}</div>")
+            words = (f"{esc(r['ingredient'])}: {abs(d):.1f}% {'under' if d < 0 else 'over'} what was called for"
+                     + (f" · {r['mean_deviation_lb']:+.2f} lb DM a head a day" if lb else "")
+                     + (f" · {r['days']} day{'s' if r['days'] != 1 else ''}" if r.get("days") else ""))
+            rows.append(f"<div class='dvr tip-row' tabindex='0'><div class='l'>{esc(r['ingredient'])}</div>"
+                        f"<div class='neg'>{neg}</div><div class='pos'>{pos}</div><div class='val'>{d:+.1f}%{esc(lb)}</div>"
+                        f"{tip(words)}</div>")
+        # The eight largest show; the rest are behind a click, on the same scale. A phone swipes the chart sideways.
+        loading = (f"<div class='table-scroll'><div class='div'><div></div><div class='axis' style='text-align:right;"
+                   f"padding-right:6px'>under</div><div class='axis' style='padding-left:6px'>over</div><div></div>"
+                   f"{''.join(rows[:8])}</div>{more_rows(rows[8:], 0, 'more ingredient', wrap=(DIV_OPEN, '</div>'))}</div>")
     except DairyToolsError:
         pass
     end = herd.as_of
@@ -238,7 +255,8 @@ def weekly_html(herd: Herd, milk_price: float | None = None, actions: list[tuple
             r = next((x for x in comp["by_stage"] if x["dim"] == b and x["parity"] == par), None)
             return "–" if not r else f"{r['fat_pct']:.2f}% · {r['protein_pct']:.2f}%  ({r['cows']})"
         cells.append(f"<div class='r'>{esc(b)}</div><div>{esc(cell('1'))}</div><div>{esc(cell('2+'))}</div>")
-    grid = f"<div class='grid' style='grid-template-columns:1.1fr 1fr 1fr'>{''.join(cells)}</div>"
+    grid = (f"<div class='table-scroll'><div class='grid' style='grid-template-columns:1.1fr 1fr 1fr'>{''.join(cells)}"
+            "</div></div>")
     mid = comp["mid_lactation"]
     mun = comp["mun_by_pen"]
     mun_tiles = "".join(tile(f"MUN, pen {m['pen']}", f"{m['mean']:.1f}", " mg/dL", f"{m['cows']} cows")
@@ -257,8 +275,14 @@ def weekly_html(herd: Herd, milk_price: float | None = None, actions: list[tuple
     dyn = "".join(tile(n, bt.get(k, 0)) for k, n in (("new", "New high"), ("chronic", "Chronic"), ("cured", "Cured"),
                                                      ("low both", "Low at both tests"))) if isinstance(bt, dict) else ""
     cm = ud["clinical_mastitis_by_month"]
-    cm_html = hbars([(r["month"], r["per_100_cows"], f"{r['cases']} cases") for r in cm[-6:]]) \
-        if isinstance(cm, list) else f"<p class='muted'>{esc(cm)}</p>"
+    if isinstance(cm, list):   # the latest six months show; earlier ones open above them, on the same scale
+        months = [(r["month"], r["per_100_cows"], f"{r['cases']} cases") for r in cm]
+        top = max((m[1] for m in months if m[1] is not None), default=None)
+        earlier = months[:-6]
+        cm_html = ((f"<details class='more-rows'><summary>+{len(earlier)} earlier month{'s' if len(earlier) != 1 else ''}"
+                    f"</summary>{hbars(earlier, top=top)}</details>" if earlier else "") + hbars(months[-6:], top=top))
+    else:
+        cm_html = f"<p class='muted'>{esc(cm)}</p>"
     sec.append("<div class='sec'><h2>Udder health</h2><div class='two'><div><p class='note'>SCC over 200,000, last test"
                f"</p>{scc}<p class='note' style='margin-top:12px'>Between the last two tests</p><div class='trow'>{dyn}"
                f"</div></div><div><p class='note'>Clinical mastitis per 100 cows in milk, whole months</p>{cm_html}"

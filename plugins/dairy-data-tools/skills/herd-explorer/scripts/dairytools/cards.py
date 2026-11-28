@@ -67,6 +67,30 @@ body.slide .card,body.slide .page{zoom:1.5;max-width:1060px;margin:14px auto}
 .grp{break-inside:avoid}.slide .body{grid-template-columns:1fr 1.15fr}.slide .rbars{columns:2;column-gap:26px}
 .slide .rbars .grp:first-child .rg{margin-top:0}
 .slide .rbars .rb{grid-template-columns:minmax(0,9.4em) minmax(40px,1fr) auto;gap:8px}
+.tip-box,.tip-own{position:relative}.tip-own{outline:none;cursor:pointer}
+.hits{position:absolute;top:0;bottom:0;left:0;right:0;display:flex}
+.hit{flex:1 1 0;min-width:0;cursor:pointer;outline:none;-webkit-tap-highlight-color:transparent}
+.hit:hover,.hit:focus{background:linear-gradient(var(--text2),var(--text2)) var(--gx,50%) 0/1.5px 100% no-repeat}
+.hits.seg{top:10px;bottom:auto;height:20px}
+.hits.seg .hit:hover,.hits.seg .hit:focus{background:none;border-radius:3px;box-shadow:inset 0 0 0 2px var(--ink)}
+.mark-tip{position:absolute;bottom:calc(100% + 4px);left:50%;transform:translateX(-50%);background:var(--ink);color:var(--surface);
+font-size:11px;font-weight:500;line-height:1.3;padding:3px 7px;border-radius:6px;white-space:nowrap;text-align:left;
+box-shadow:0 2px 8px rgba(0,0,0,.18);opacity:0;pointer-events:none;transition:opacity .12s;z-index:20}
+.mark-tip b{font-weight:700}.mark-tip.l{transform:none}.mark-tip.r{left:auto;transform:none}
+.mark-tip.box{left:0;right:0;margin:0 auto;width:max-content;max-width:100%;white-space:normal;transform:none}
+.tip-row{position:relative;outline:none;border-radius:4px;-webkit-tap-highlight-color:transparent}
+.tip-row>.mark-tip{left:auto;right:0;width:max-content;max-width:100%;white-space:normal;transform:none}
+.hit:hover>.mark-tip,.hit:focus>.mark-tip,.tip-own:hover>.mark-tip,.tip-own:focus>.mark-tip,
+.tip-row:hover>.mark-tip,.tip-row:focus>.mark-tip{opacity:1}
+.rb:hover,.rb:focus,.hr:hover,.hr:focus,.tip-row:hover,.tip-row:focus{background:var(--raised);
+box-shadow:-5px 0 0 var(--raised),5px 0 0 var(--raised)}
+.chart-scroll{overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:thin;padding:58px 0 2px;margin-top:-54px}
+.chart-inner{position:relative;min-width:620px}.chart-inner>svg{display:block}.slide .chart-inner{min-width:0}
+.table-scroll{overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:thin;padding:22px 0 2px;margin-top:-20px}
+.more-rows{margin-top:4px}
+.more-rows summary{list-style:none;cursor:pointer;font-size:12.5px;font-weight:500;color:var(--text2);padding:4px 0;user-select:none}
+.more-rows summary::-webkit-details-marker{display:none}.more-rows summary:hover{color:var(--text)}
+.more-rows summary::after{content:" ▾";font-size:11px}.more-rows[open] summary::after{content:" ▴"}
 @media (max-width:1060px){.body{grid-template-columns:1fr}}
 @media (max-width:820px){.tiles{grid-template-columns:repeat(2,1fr)}.head h1{font-size:34px}
 .card{margin:8px;padding:16px}.figs .v{font-size:24px}}
@@ -84,6 +108,50 @@ def chip(label, value) -> str:
 
 def _fmt_date(d: date) -> str:
     return f"{d:%b} {d.day}"
+
+
+def tip(words: str, where: str = "", style: str = "") -> str:
+    """The pill a hover, a tap or the Tab key shows (CSS only). `words` is HTML, already escaped. where: "" centred on
+    its target, "l" / "r" running right / left from it (near an edge), "box" centred on the whole chart and wrapping."""
+    return (f"<span class='mark-tip{' ' + where if where else ''}'" + (f" style='{style}'" if style else "")
+            + f">{words}</span>")
+
+
+def _spread(n: int, k: int) -> list[int]:
+    """Up to k places in 0..n-1, evenly spaced, the first and the last among them."""
+    if n <= k:
+        return list(range(n))
+    return sorted({round(i * (n - 1) / (k - 1)) for i in range(k)})
+
+
+def _day_hits(tips: dict, start: date, end: date, pad_l: float, pad_r: float, width: float, always=(), k: int = 14) -> str:
+    """Strips over a chart's time axis, one for each of about k evenly spaced days (and the last day, and each day in
+    `always`): hovering, tapping or tabbing to a strip draws a line at its day and shows that day's pill above the
+    chart. tips: {day: HTML}. The strips together cover the plot, so there is no dead space between them."""
+    days = sorted(d for d in tips if start <= d <= end)
+    if not days:
+        return ""
+    span = max((end - start).days, 1)
+    keep = {days[-1]} | {d for d in always if d in tips and start <= d <= end}
+    near = span / (2.5 * k)     # an evenly spaced day this close to one that is always shown gives way to it
+    chosen = sorted(keep | {days[i] for i in _spread(len(days), k) if all(abs((days[i] - f).days) > near for f in keep)})
+    at = [(d - start).days / span for d in chosen]
+    edges = [0.0] + [(a + b) / 2 for a, b in zip(at, at[1:])] + [1.0]
+    out = []
+    for i, d in enumerate(chosen):
+        w = max(edges[i + 1] - edges[i], 1e-6)
+        f = at[i]
+        where, style = ("l", f"left:{100 * f:.2f}%") if f < .35 else ("r", f"right:{100 * (1 - f):.2f}%") if f > .65 \
+            else ("", f"left:{100 * f:.2f}%")
+        out.append(f"<span class='hit' tabindex='0' style='flex:0 0 {100 * w:.3f}%;--gx:{100 * (f - edges[i]) / w:.1f}%'>"
+                   f"{tip(tips[d], where, style)}</span>")
+    return (f"<div class='hits' style='left:{100 * pad_l / width:.2f}%;right:{100 * pad_r / width:.2f}%'>"
+            f"{''.join(out)}</div>")
+
+
+def _scroll_chart(svg: str, hits: str) -> str:
+    """A wide chart in a strip a phone can swipe sideways, with room above it for the pills."""
+    return f"<div class='chart-scroll'><div class='chart-inner'>{svg}{hits}</div></div>"
 
 
 def _kde(values, lo, hi, points=41):
@@ -126,19 +194,39 @@ def violin(values, label, unit="", width=260, height=46) -> str:
             f'y2="{mid + (mid - 3) * at(p50):.1f}" stroke="var(--ink)" stroke-width="2"/></svg>')
 
 
+def violin_tip(values, label, unit="", width=260, height=46) -> str:
+    """violin(), and on hover, tap or Tab a pill with its lowest, 10th to 90th percentile, median and highest. The
+    drawing is violin()'s own, untouched, so a page that lines marks up against it (the cow card) still can."""
+    svg = violin(values, label, unit, width, height)
+    if not svg:
+        return ""
+    v = sorted(x for x in values if x is not None)
+    words = (f"Lowest {v[0]:.0f} · P10–P90 {quantile(v, .1):.0f}–{quantile(v, .9):.0f} · Median "
+             f"{quantile(v, .5):.0f} · Highest {v[-1]:.0f}{esc(unit)}")
+    return f"<div class='tip-own' tabindex='0'>{svg}{tip(words, 'box')}</div>"
+
+
 def lact_bar(groups) -> str:
+    """One segment per lactation group, as wide as its cows; each segment answers a hover, tap or Tab with its count
+    and share."""
     total = sum(n for _, n in groups) or 1
     colours = ["var(--l1)", "var(--l2)", "var(--l3)", "var(--bar)"]
-    x, parts = 0.0, []
+    x, parts, hits = 0.0, [], []
     for (label, n), col in zip(groups, colours):
         w = 260 * n / total
+        words = f"{esc(label)} lact: {n} cow{'s' if n != 1 else ''} ({100 * n / total:.0f}%)"
         parts.append(f'<rect x="{x:.1f}" y="10" width="{max(w - 2, 0):.1f}" height="20" rx="3" fill="{col}">'
-                     f'<title>{esc(label)}: {n}</title></rect>')
+                     f'<title>{words}</title></rect>')
+        hits.append(f"<span class='hit' tabindex='0' style='flex:{n} 1 0'>{tip(words, 'box')}</span>")
         x += w
-    return f'<svg viewBox="0 0 260 40" width="100%" height="40" role="img" aria-label="lactations">{"".join(parts)}</svg>'
+    # Stretched to the tile's width (as the violins are), so each segment's hit area sits exactly on it.
+    return (f'<div class="tip-box"><svg viewBox="0 0 260 40" width="100%" height="40" preserveAspectRatio="none" '
+            f'role="img" aria-label="lactations">{"".join(parts)}</svg><div class="hits seg">{"".join(hits)}</div></div>')
 
 
-def spark(series, width=260, height=40) -> str:
+def spark(series, width=260, height=40, unit="") -> str:
+    """A small daily line. About a dozen of its days (the first and the last among them) answer a hover, tap or Tab
+    with the day and its figure."""
     vals = [v for _, v in series if v is not None]
     if len(vals) < 2:
         return ""
@@ -147,9 +235,21 @@ def spark(series, width=260, height=40) -> str:
     n = len(series)
     pts = " ".join(f"{i / (n - 1) * width:.1f},{height - 4 - (v - lo) / (hi - lo) * (height - 8):.1f}"
                    for i, (_, v) in enumerate(series) if v is not None)
-    return (f'<svg viewBox="0 0 {width} {height}" width="100%" height="{height}" preserveAspectRatio="none" role="img" '
-            f'aria-label="daily, {lo:.1f} to {hi:.1f}"><polyline points="{pts}" fill="none" stroke="var(--mark)" '
-            f'stroke-width="1.6"/></svg>')
+    svg = (f'<svg viewBox="0 0 {width} {height}" width="100%" height="{height}" preserveAspectRatio="none" role="img" '
+           f'aria-label="daily, {lo:.1f} to {hi:.1f}"><polyline points="{pts}" fill="none" stroke="var(--mark)" '
+           f'stroke-width="1.6"/></svg>')
+    picked = _spread(n, 12)
+    hits = []
+    for j, i in enumerate(picked):   # equal strips; the line each draws sits on its own day
+        d, v = series[i]
+        if v is None:
+            hits.append("<span class='hit'></span>")
+            continue
+        gx = min(100.0, max(0.0, (i / (n - 1) * len(picked) - j) * 100))
+        when = f"{_fmt_date(d)} · " if isinstance(d, date) else ""
+        hits.append(f"<span class='hit' tabindex='0' style='--gx:{gx:.1f}%'>"
+                    f"{tip(f'{when}{v:.1f}{esc(unit)}', 'box')}</span>")
+    return f'<div class="tip-box">{svg}<div class="hits">{"".join(hits)}</div></div>'
 
 
 def _week_avg(series):
@@ -194,6 +294,25 @@ def pen_panels(start: date, end: date, change: date | None = None, band=(), line
     span = max((end - start).days, 1)
     x = lambda d: pad_l + (d - start).days / span * (width - pad_l - pad_r)
     out = [f'<svg viewBox="0 0 {width} {height}" width="100%" role="img" aria-label="milk and intake by day">']
+    say = defaultdict(list)     # each day's pill: a line for its milk, a line for what was fed
+    if top_h:
+        milk = esc(milk_words.split(",")[0].split(":")[0])
+        for d, l, m, h in band:
+            if None not in (l, m, h) and start <= d <= end:
+                say[d].append(f"{milk} {m:.0f} lb · middle 80% {l:.0f}–{h:.0f}")
+        by_day = defaultdict(list)
+        for label, _, s in lines:
+            for d, v in s:
+                if v is not None and start <= d <= end:
+                    by_day[d].append(f"{esc(label)} {v:.1f}")
+        for d, parts in by_day.items():
+            say[d].append(f"{milk}: {' · '.join(parts)} lb")
+    if low_h:
+        share = None
+        for d, v in sorted((d, v) for d, v in fed if start <= d <= end and v is not None):
+            share = (shares or {}).get(d, share)
+            say[d].append(f"Fed {v:.1f} lb DM" + "".join(
+                f" · {esc(label)} {100 * share.get(key, 0):.0f}%" for key, label in LAYERS[:4] if share))
 
     def ends_text(ends):
         ends.sort()
@@ -287,17 +406,39 @@ def pen_panels(start: date, end: date, change: date | None = None, band=(), line
         if d.day in (1, 15):
             out.append(f'<text x="{x(d):.1f}" y="{height - 6}" font-size="11.5" text-anchor="middle">{_fmt_date(d)}</text>')
         d += timedelta(days=1)
-    return "".join(out) + "</svg>"
+    tips = {d: f"<b>{_fmt_date(d)}</b>" + (" · ration change" if d == change else "") + "".join(f"<br>{w}" for w in ws)
+            for d, ws in say.items()}
+    return _scroll_chart("".join(out) + "</svg>", _day_hits(tips, start, end, pad_l, pad_r, width, always=(change,)))
 
 
-def health_rows(health, cows: int) -> str:
-    """One bar per health event: the cows with it in the last days, and how many that is in 100 cows of the pen."""
+def more_rows(rows: list[str], limit: int, what: str, wrap=("", "")) -> str:
+    """The first `limit` rows, and the rest behind a line to click ("+3 more events", what="more event"): nothing is dropped. With
+    limit None every row shows. wrap: (opening, closing) HTML put round the rows that are behind the click."""
+    if limit is None or len(rows) <= limit:
+        return "".join(rows)
+    n = len(rows) - limit
+    return ("".join(rows[:limit]) + f"<details class='more-rows'><summary>+{n} {esc(what)}{'s' if n != 1 else ''}"
+            f"</summary>{wrap[0]}{''.join(rows[limit:])}{wrap[1]}</details>")
+
+
+def health_rows(health, cows: int, limit: int | None = 8) -> str:
+    """One bar per health event: the cows with it in the last days, and how many that is in 100 cows of the pen.
+    Past `limit` events the rest sit behind "+N more events" (limit None: all of them shown)."""
     top = max(h["cows"] for h in health) or 1
-    return "".join(
-        f"<div class='hr'><span>{esc(h['event'].capitalize())}</span><div class='tr'><div class='fl' "
-        f"style='width:{max(3, 100 * h['cows'] / top):.0f}%'></div></div><span class='lb'>{h['cows']} "
-        f"cow{'s' if h['cows'] != 1 else ''}" + (f" <small>· {100 * h['cows'] / cows:.0f} in 100</small>" if cows else "")
-        + "</span></div>" for h in health)
+    rows = []
+    for h in health:
+        name, n = esc(h["event"].capitalize()), h["cows"]
+        words = f"{name}: {n} cow{'s' if n != 1 else ''}"
+        if h.get("events"):
+            words += f" · {h['events']} event{'s' if h['events'] != 1 else ''}"
+        if cows:
+            words += f" · {100 * n / cows:.1f} in 100 cows"
+        rows.append(
+            f"<div class='hr tip-row' tabindex='0'><span>{name}</span><div class='tr'><div class='fl' "
+            f"style='width:{max(3, 100 * n / top):.0f}%'></div></div><span class='lb'>{n} "
+            f"cow{'s' if n != 1 else ''}" + (f" <small>· {100 * n / cows:.0f} in 100</small>" if cows else "")
+            + f"</span>{tip(words)}</div>")
+    return more_rows(rows, limit, "more event")
 
 
 def time_chart(rows, change: date | None, start: date, end: date, width=760) -> str:
@@ -307,6 +448,15 @@ def time_chart(rows, change: date | None, start: date, end: date, width=760) -> 
     span = max((end - start).days, 1)
     x = lambda d: pad_l + (d - start).days / span * (width - pad_l - pad_r)
     out = [f'<svg viewBox="0 0 {width} {height}" width="100%" role="img" aria-label="by day, {start} to {end}">']
+    say = defaultdict(list)     # each day's pill: a line for each panel
+    for title, unit, lines in rows:
+        by_day = defaultdict(list)
+        for label, _, s in lines:
+            for d, v in s:
+                if v is not None and start <= d <= end:
+                    by_day[d].append(f"{esc(label)} {v:.1f}")
+        for d, parts in by_day.items():
+            say[d].append(f"{esc(title)}: {' · '.join(parts)}" + (f" {esc(unit)}" if unit else ""))
     for k, (title, unit, lines) in enumerate(rows):
         top = k * (panel_h + gap) + 18
         vals = [v for _, _, s in lines for _, v in s if v is not None]
@@ -351,7 +501,11 @@ def time_chart(rows, change: date | None, start: date, end: date, width=760) -> 
             out.append(f'<text x="{x(d):.1f}" y="{height - 6}" font-size="11.5" text-anchor="middle">{_fmt_date(d)}</text>')
         d += timedelta(days=1)
     out.append("</svg>")
-    return "".join(out)
+    tips = {}
+    for d, ws in say.items():   # at most three lines, so the pill fits in the room above the chart
+        ws = ws if len(ws) <= 2 else [" · ".join(ws[:(len(ws) + 1) // 2]), " · ".join(ws[(len(ws) + 1) // 2:])]
+        tips[d] = f"<b>{_fmt_date(d)}</b>" + (" · ration change" if d == change else "") + "".join(f"<br>{w}" for w in ws)
+    return _scroll_chart("".join(out), _day_hits(tips, start, end, pad_l, pad_r, width, always=(change,)))
 
 
 FEED_TYPES = (   # (type, words in the feed's name); the first match wins, so silage counts as forage
@@ -388,6 +542,8 @@ def ration_bars(after: dict, before: dict | None = None, only_moved: bool = Fals
     if not show:
         return "<p class='sub'>No feeds recorded.</p>"
     top = top or max(max(after.get(k, 0.0), before.get(k, 0.0)) for k in show) or 1
+    all_after, all_before = sum(after.values()), sum(before.values())   # the whole ration, for each feed's share
+    share = lambda lb, of: f" · {100 * lb / of:.1f}% of DM" if of else ""
     groups = defaultdict(list)
     for k in show:
         groups[feed_type(k)].append(k)
@@ -410,8 +566,12 @@ def ration_bars(after: dict, before: dict | None = None, only_moved: bool = Fals
                     bar += f"<div class='tk' style='left:{100 * a / top:.1f}%'></div>"
                 label = (f"<small>new ·</small> {b:.1f}" if changed and a < .05 else
                          f"<small>{a:.1f} →</small> {b:.1f}" if changed else f"{b:.1f}")
-            out.append(f"<div class='rb'><span class='nm' title='{esc(k)}'>{esc(k)}</span><div class='tr'>{bar}</div>"
-                       f"<span class='lb'>{label} <small>lb</small></span></div>")
+            now = f"{b:.1f} lb DM{share(b, all_after)}"
+            words = (f"{esc(k)}: off · was {a:.1f} lb DM{share(a, all_before)}" if changed and b < .05 else
+                     f"{esc(k)}: new · {now}" if changed and a < .05 else
+                     f"{esc(k)}: {now} · was {a:.1f} lb{share(a, all_before)}" if changed else f"{esc(k)}: {now}")
+            out.append(f"<div class='rb tip-row' tabindex='0'><span class='nm' title='{esc(k)}'>{esc(k)}</span>"
+                       f"<div class='tr'>{bar}</div><span class='lb'>{label} <small>lb</small></span>{tip(words)}</div>")
         out.append("</div>")
     if only_moved and len(feeds) > len(show):
         n = len(feeds) - len(show)
@@ -520,16 +680,16 @@ def pen_card_html(herd: Herd, pen, pen_milk: dict | None = None, days: int = 75,
     tiles = [
         (f"Milk per cow, {herd.milk_words}", f"{t['milk_mean_lb']:.1f} lb" if t["milk_mean_lb"] else "n/a",
          f"ECM {t['ecm_mean_lb']:.1f} lb" if t["ecm_mean_lb"] else "",
-         violin(milk_vals, f"milk, {herd.milk_words}", " lb"),
+         violin_tip(milk_vals, f"milk, {herd.milk_words}", " lb"),
          " · ".join(x for x in (rank, f"middle 80%: {quantile(milk_vals, .1):.0f}–{quantile(milk_vals, .9):.0f} lb"
                                 if milk_vals else "no milk recorded") if x)),
         ("Days in milk", f"{quantile(dim_vals, .5):.0f}" if dim_vals else "n/a", "median",
-         violin(dim_vals, "days in milk"),
+         violin_tip(dim_vals, "days in milk", " days"),
          f"Middle 80%: {quantile(dim_vals, .1):.0f}–{quantile(dim_vals, .9):.0f} days" if dim_vals else ""),
         ("Lactation", f"{median_lact:.0f}" if median_lact else "n/a", "median", lact_bar(lact),
          " · ".join(f"{l} {n}" for l, n in lact)),
         ("Intake, last 7 days", f"{feed['dmi_lb_per_cow']:.1f} lb" if feed and feed.get("dmi_lb_per_cow") else "n/a",
-         "DM per cow", spark(intake_series[-30:]),
+         "DM per cow", spark(intake_series[-30:], unit=" lb DM"),
          (f"Called for {called:.1f} lb · daily, last 30 days" if called else "Daily, the last 30 days")
          if intake_series else "No EZfeed records"),
     ]

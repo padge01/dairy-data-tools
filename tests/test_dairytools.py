@@ -507,3 +507,79 @@ def test_dairyread_flexible_headers_dates_and_dedup_invariance(tmp_path):
     (tmp_path / "ev.csv").write_text(evs, encoding="utf-8")
     assert len(dairyread.read_events(tmp_path / "ev.csv", include_remarks=False)) == 2
     assert len(dairyread.read_events(tmp_path / "ev.csv", include_remarks=True)) == 2
+
+
+# --- cards: hover, tap and Tab pills, sideways scroll, rows behind a click (CSS only, no script) --------------------------
+
+SAMPLE = ROOT / "plugins" / "dairy-data-tools" / "sample-herd"
+
+
+def test_card_parts_answer_hover_tap_and_tab_without_script():
+    from dairytools import cards
+    lo_hi = cards.violin_tip([40, 60, 80, 90, 100, 131], "milk", " lb")
+    assert "tabindex='0'" in lo_hi and "Lowest 40 · P10–P90 50–116 · Median 85 · Highest 131 lb" in lo_hi
+    assert cards.violin([40, 60, 80, 90, 100, 131], "milk", " lb") in lo_hi      # the drawing itself is untouched
+    assert cards.violin([40, 60, 80, 90, 100, 131], "milk", " lb").startswith("<svg") and cards.violin_tip([1, 2], "x") == ""
+    bar = cards.lact_bar([("1st", 42), ("2nd", 38), ("3rd+", 30)])
+    assert bar.count("tabindex='0'") == 3 and "1st lact: 42 cows (38%)" in bar and "3rd+ lact: 30 cows (27%)" in bar
+    days = [(date(2025, 12, 1) + (date(2025, 12, 2) - date(2025, 12, 1)) * i, 50 + i / 10) for i in range(30)]
+    line = cards.spark(days, unit=" lb DM")
+    assert 10 <= line.count("tabindex='0'") <= 15 and "Dec 1 · 50.0 lb DM" in line and "Dec 30 · 52.9 lb DM" in line
+    change = date(2025, 12, 17)
+    chart = cards.pen_panels(days[0][0], days[-1][0], change, lines=[("daily", "thin", days)], fed=days,
+                             shares={d: {"ndf": .3, "starch": .25, "cp": .17, "fat": .05, "other": .23} for d, _ in days})
+    assert chart.startswith("<div class='chart-scroll'><div class='chart-inner'><svg")
+    assert 12 <= chart.count("tabindex='0'") <= 18
+    assert "<b>Dec 30</b><br>Milk: daily 52.9 lb<br>Fed 52.9 lb DM · aNDF 30% · Starch 25% · CP 17% · Fat 5%" in chart
+    assert "<b>Dec 17</b> · ration change<br>" in chart
+    stacked = cards.time_chart([("ECM", "lb", [("7-day", "bold", days)])], change, days[0][0], days[-1][0])
+    assert stacked.startswith("<div class='chart-scroll'>") and "<b>Dec 30</b><br>ECM: 7-day 52.9 lb" in stacked
+    assert "<b>Dec 17</b> · ration change" in stacked
+    ration = cards.ration_bars({"Corn silage": 15.0, "Canola meal": 5.0}, {"Corn silage": 14.0, "Canola meal": 5.0, "Hay": 1.0})
+    assert "Corn silage: 15.0 lb DM · 75.0% of DM · was 14.0 lb · 70.0% of DM" in ration
+    assert "Canola meal: 5.0 lb DM · 25.0% of DM</span>" in ration and "Hay: off · was 1.0 lb DM · 5.0% of DM" in ration
+    health = [{"event": f"event {i}", "events": 12 - i, "cows": 11 - i} for i in range(10)]
+    rows = cards.health_rows(health, 100)
+    shown, _, behind = rows.partition("<details class='more-rows'><summary>+2 more events</summary>")
+    assert shown.count("class='hr tip-row'") == 8 and behind.count("class='hr tip-row'") == 2
+    assert "Event 0: 11 cows · 12 events · 11.0 in 100 cows" in rows
+    assert "<details" not in cards.health_rows(health[:8], 100) and "<details" not in cards.health_rows(health, 100, limit=None)
+    for part in (lo_hi, bar, line, chart, stacked, ration, rows):
+        assert "<script" not in part.lower()
+    # Every pill shows on hover and on focus (a tap or the Tab key), and a scroll strip leaves room above for pills.
+    for rule in (".hit:hover>.mark-tip,.hit:focus>.mark-tip", ".tip-own:hover>.mark-tip,.tip-own:focus>.mark-tip",
+                 ".tip-row:hover>.mark-tip,.tip-row:focus>.mark-tip", ".rb:hover", ".hr:hover",
+                 ".chart-scroll{overflow-x:auto;-webkit-overflow-scrolling:touch", ".table-scroll{overflow-x:auto;"
+                 "-webkit-overflow-scrolling:touch", "background:var(--ink);color:var(--surface)"):
+        assert rule in cards.CSS, rule
+    assert cards.CSS.count("prefers-color-scheme") == 1      # one dark block, which a host page may rewrite
+
+
+def test_the_sample_herds_cards_scroll_expand_and_run_no_script():
+    from dairytools import cards, weeklycard
+    herd = load(SAMPLE)
+    pen = cards.pen_card_html(herd, "21")
+    feed = weeklycard.pen_feed_html(herd, 21.5)
+    visit = weeklycard.weekly_html(herd)
+    slides = [cards.pen_card_html(herd, "21", slide=True), weeklycard.pen_feed_html(herd, slide=True)]
+    for page in (pen, feed, visit, *slides):
+        assert "<script" not in page.lower() and "tabindex='0'" in page and "http" not in page.split("</style>")[1]
+    assert "class='chart-scroll'" in pen and "class='tip-own' tabindex='0'" in pen and 'class="hits seg"' in pen
+    assert " lb DM · " in pen and "% of DM</span>" in pen
+    # Loading: the eight largest misses show, the rest are behind a click; nothing is dropped.
+    loading = feed.split("Loading, fed against called for")[1]
+    all_feeds = len(feeding.loading_accuracy(herd, by="ingredient", days=14)["rows"])
+    shown, _, behind = loading.partition("<details class='more-rows'>")
+    assert loading.count("class='table-scroll'") == 1 and shown.count("class='dvr tip-row'") == 8
+    assert all_feeds > 8 and f"<summary>+{all_feeds - 8} more ingredients</summary>" in behind
+    assert behind.count("class='dvr tip-row'") == all_feeds - 8 and "what was called for" in loading
+    # The visit page: the components table scrolls; the latest six months of mastitis show, earlier ones open above.
+    assert "<div class='table-scroll'><div class='grid'" in visit and "class='hbr tip-row' tabindex='0'" in visit
+    months = weekly.weekly(herd)["udder_health"]["clinical_mastitis_by_month"]
+    mastitis = visit.split("Clinical mastitis per 100 cows in milk, whole months")[1].split("<h2>Reproduction")[0]
+    earlier, _, latest = mastitis.partition("</details>")
+    assert len(months) > 6 and f"<summary>+{len(months) - 6} earlier months</summary>" in earlier
+    assert earlier.count("class='hbr tip-row'") == len(months) - 6 and latest.count("class='hbr tip-row'") == 6
+    assert all(f">{m['month']}<" in latest for m in months[-6:])
+    for page in slides:      # a projector slide stays plain: nothing folded away
+        assert "<details" not in page
